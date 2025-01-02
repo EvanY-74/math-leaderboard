@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math Leaderboard</title>
+</head>
+<body>
+    <main>
+        <h1>Create an account</h1>
+        <form>
+            <p id="message" class="red" style="display: none"></p>
+            <label for="username">name </label>
+            <input type="text" id="username" name="username" required>
+            <label for="email">email </label><!--span style="color: #808080; font-size: 1.25vw; vertical-align: text-top;"> optional</span-->
+            <input type="email" id="email" name="email" placeholder="optional">
+            <label for="password">password </label>
+            <input type="password" id="password" name="password" required>
+            <div class="buttons-container">
+                <button style="margin: 1em 0 0 0" class="primary">Sign up</button>
+            </div>
+        </form>
+    </main>
+    <script>
+        // TODO: create 2 password fields
+        const form = document.querySelector('form');
+        const message = document.getElementById('message');
+        const submitButton = document.querySelector('form button');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = form.username.value;
+            const email = form.email.value;
+            const password = form.password.value;
+
+            submitButton.innerHTML = 'Loading';
+            try {
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                submitButton.innerHTML = 'Sign up';
+                message.style.display = 'block';
+                if (response.ok) {
+                    message.innerHTML = 'success!';
+                    message.classList.remove('red');
+                    message.classList.add('green');
+                    location.href = '/account';
+                } else {
+                    message.innerHTML = data.message || data.errorCode || 'server error';
+                    message.classList.remove('green');
+                    message.classList.add('red');
+                }
+            } catch (error) {
+                console.error(error);
+                message.innerHTML = 'client error';
+                message.classList.remove('green');
+                message.classList.add('red');
+            }
+        });
+    </script>
+</body>
+</html>

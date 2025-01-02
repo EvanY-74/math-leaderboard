@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math Leaderboard</title>
+</head>
+<body>
+    <main>
+        <h1 style="font-size: 10vw;">Math Leaderboard</h1>
+        <p class="center">Did you know that 1 + 1 doesn't equal 1?</p>
+        <div class="buttons-container">
+            <button class="primary" style="height: 5em; margin: 1em" onclick="redirect('/leaderboard')">See leaderboard</button>
+            <button class="primary" style="height: 5em; margin: 1em" onclick="points('/submit')">Submit points</button>
+        </div>
+    </main>
+    <script>
+        function redirect(link) {
+            location.href = link;
+        }
+    </script>
+</body>
+</html>

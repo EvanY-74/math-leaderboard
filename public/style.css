@@ -1,0 +1,277 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+:root {
+    --white: #F3F2F7;
+    --black: #333333;
+    --primary: #7BAE7F;
+    --secondary: #F6AE2D;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    background-image: url("mandlebrot_red.png");
+    /* background-image: url("https://upload.wikimedia.org/wikipedia/commons/2/21/Mandel_zoom_00_mandelbrot_set.jpg"); */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+    z-index: -2;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); 
+    z-index: -1; 
+}
+
+#back {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 1em;
+    text-decoration: none;
+    /* cursor: pointer; */
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 70%;
+    /* height: 100%; */
+    margin: 0 auto;
+}
+
+body * {
+    font-family: Poppins;
+    color: var(--white);
+}
+
+h1 {
+    font-size: 5vw;
+    margin: 0.2em;
+    text-align: center;
+    font-weight: 500;
+    line-height: 1.25em;
+}
+
+h2 {
+    width: 100%;
+    font-size: 2vw;
+    font-weight: 400;
+    text-align: left;
+    margin: 0.1em;
+}
+
+p {
+    font-weight: 300;
+    line-height: 1.7em;
+    width: 100%;
+}
+
+.center {
+    text-align: center;
+    width: auto;
+}
+
+ul {
+    width: 100%;
+    margin: 0.4em 0;
+}
+
+main a {
+    color: var(--secondary);
+}
+
+hr {
+    width: 80%;
+}
+
+table.problems {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin: 0.4em 0;
+    font-size: 1vw;
+}
+
+/* table.problems td {
+    height: 1vw;
+    line-height: 1vw;
+    overflow-y: auto;
+    
+} */
+
+table.problems tr td:nth-child(1) {
+    width: 20%;
+}
+table.problems tr td:nth-child(2) {
+    width: 55%;
+}
+table.problems tr td:nth-child(3) {
+    width: 15%;
+}
+table.problems tr td:nth-child(4) {
+    width: 10%;
+}
+
+.buttons-container {
+    display: flex;
+    justify-content: stretch;
+    width: 100%;
+}
+
+button.primary {
+    all: unset;
+    display: inline-block;
+    border: none;
+    flex: 1;
+    margin: 0.5em;
+    width: 100%;
+    height: 2.5em;
+    border-radius: 1.5em;
+    background: linear-gradient(135deg, var(--primary), color-mix(in hsl, var(--primary), black 20%));
+    text-align: center;
+    color: color-mix(in hsl, var(--primary), black 92%);
+    box-shadow: 0px 6px color-mix(in hsl, var(--primary), black 50%);
+    font-size: 2vw;
+    font-weight: 500;
+
+    transition: 0.25s;
+}
+
+button.primary:enabled:hover, button.primary:enabled:focus {
+    transform: translateY(4px);
+    box-shadow: 0px 2px color-mix(in hsl, var(--primary), black 50%);
+}
+
+button.primary:enabled:active {
+    transform: translateY(6px);
+    box-shadow: none;
+}
+
+button.primary:disabled {
+    cursor: not-allowed;
+    background: #7b7b7b;
+    box-shadow: 0px 2px #606060;
+}
+
+form {
+    display: inline-block;
+    min-width: 20%;
+    margin: 0 2em;
+    font-size: 2vw;
+}
+
+form #message {
+    border-radius: 0.5em;
+    margin: 0;
+    font-size: 1.25vw;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.75em;
+}
+
+.red {
+    background-color: #ff2020;
+    color: var(--white);
+}
+
+.green {
+    background-color: #1faf2e;
+    color: var(--white);
+}
+
+form label {
+    display: inline-block;
+    margin-top: 0.5em;
+}
+
+input, textarea {
+    border: none;
+    border-radius: 5px;
+    background-color: var(--black);
+    padding: 0.25em;
+    font-size: 1.25vw;
+    margin: 0.25em 0;
+}
+
+textarea {
+    width: 100%;
+    resize: vertical;
+    font-size: 1.5vw;
+}
+
+input[type="checkbox"], input[type="radio"] {
+    display: inline;
+    width: 1em;
+    height: 1em;
+    margin-right: 0.5em;
+    accent-color: var(--primary);
+}
+
+.info-container {
+  position: relative;
+  display: inline-block;
+  cursor: default;
+}
+
+.info-icon {
+    vertical-align: top;
+    font-size: 1.25vw;
+    font-weight: 600;
+}
+
+.info-text {
+    display: block;
+    position: absolute;
+    top: 0.75em;
+    left: 1.5vw;
+    width: max-content;
+    max-width: 40vw;
+    visibility: hidden;
+    opacity: 0;
+    background-color: var(--white);
+    color: var(--black);
+    font-size: 1.3vw;
+    border-radius: 0 10px 10px 10px;
+    padding: 10px;
+    transition: opacity 0.4s;
+    z-index: 10;
+}
+
+.info-container:hover .info-text, .info-container:focus .info-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+form input {
+    display: block;
+    font-size: 1.5vw;
+    font-family: poppins;
+}
