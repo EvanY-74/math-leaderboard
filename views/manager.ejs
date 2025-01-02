@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math Leaderboard</title>
+</head>
+<body>
+    <main>
+        <h1>Manager Dashboard</h1>
+        <hr>
+        <% if (locals.proposedProblems?.length > 0) { %>
+            <h2>Proposed Problems</h2>
+            <ul>
+                <% for (const problem of locals.proposedProblems) { %>
+                    <li><a href="/manager/<%= problem.id %>"><%= problem.name %></a></li>
+                    <label><%= problem.description %></label>
+                <% } %>
+            </ul>
+        <% } else { %>
+            <p>No new problems proposed</p>
+        <% } %>
+    </main>
+</body>
+</html>

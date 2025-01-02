@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math Leaderboard</title>
+</head>
+<body>
+    <main>
+        <h1><span style="color: #818181">#<%= locals.rank || '??' %></span> <%= username %> - 1280</h1>
+        <hr>
+        <p class="center">Joined <%= (new Date(dateJoined)).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+        <p class="center"><%= accountDescription %></p>
+        <h2>Problems Solved: 3</h2>
+        <p style="white-space: nowrap; overflow-x: auto">a, b, c</p>
+        <% if (proposedProblems.length != 0) { %>
+            <h2>Proposed Problems</h2>
+            <ul>
+                <% for (const problem of proposedProblems) { %>
+                    <li><%= problem.name %></li>
+                    <label style="white-space: pre-wrap">status: <%= problem.status %><%= problem.status == 'rejected' ? ' | reasoning:\n' + problem.rejectionReasoning : '' %></label>
+                <% } %>
+            </ul>
+        <% } %>
+        <h2 class="center">Actions</h2>
+        <div class="buttons-container">
+            <button class="primary" onclick="redirect('/problems')">View problems</button>
+            <button class="primary" onclick="redirect('/propose_problem')">Propose new problem</button>
+        </div>
+    </main>
+    <script>
+        function redirect(link) {
+            location.href = link;
+        }
+    </script>
+</body>
+</html>

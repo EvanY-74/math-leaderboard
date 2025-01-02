@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math Leaderboard</title>
+</head>
+<body>
+    <a id="back" href="/account">← account</a>
+    <main>
+        <h1>Propose a problem</h1>
+        <hr>
+        <form style="width: 100%">
+            <label for="name">Problem name</label>
+            <input type="text" id="name" name="name" required>
+            <label for="description">Description</label>
+            <div class="info-container">
+                <span class="info-icon">ⓘ</span>
+                <div class="info-text">(optional) Brief summary about the contents of the problem</div>
+            </div>
+            <input type="text" id="description" name="description" style="width: 100%" placeholder="This will appear next to your problem!">
+            <label for="content">Content of your problem</label>
+            <textarea id="content" name="content" rows="6" placeholder="1 + 1 = ?" required></textarea>
+            <label>Can this problem be automatically graded?</label><br>
+            <input type="checkbox" id="testable" name="testable" checked><label style="display: inline; font-size: 1em" for="testable">yes</label><br>
+            <label for="answer">Answer</label>
+            <input type="text" id="answer" name="answer" placeholder="case-sensitive" required>
+            <div class="buttons-container">
+                <button style="margin: 1em 0 0 0" class="primary">Submit</button>
+            </div>
+        </form>
+    </main>
+    <script>
+        const form = document.querySelector('form');
+        const submitButton = document.querySelector('form button');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = form.name.value;
+            const description = form.description.value;
+            const content = form.content.value;
+            const testable = form.testable.checked;
+            const answer = form.answer.value;
+
+            try {
+                const response = await fetch('/propose_problem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description, content, testable, answer }),
+                });
+                
+
+                if (response.redirected) {
+                    location.href = response.url;
+                } else {
+                    console.log(response);
+                }
+            } catch (error) {
+                console.error(error);
+                submitButton.innerHTML = 'client error';
+            }
+        });
+    </script>
+</body>
