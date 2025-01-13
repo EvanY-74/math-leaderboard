@@ -7,10 +7,10 @@
     <title>Math Leaderboard</title>
 </head>
 <body>
-    <a id="back" href="/problems">← problems</a>
+    <a class="back" href="/problems">← problems</a>
     <main>
         <h1><%= problem.name %></h1>
-        <p class="center"><%= problem.description %><br><strong>Difficulty: <%= problem.difficulty %> | <%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric' }) %></strong></p>
+        <p class="center"><%= problem.description %><br><strong>Difficulty: <%= problem.difficulty %> | <%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></strong></p>
         <!-- <hr> -->
         <p style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap"><%= problem.content %></p>
         <p><%= problem.testable ? 'Automatically checked (still requires manually approval)' : 'Manual grading' %></p>
@@ -22,8 +22,29 @@
     </main>
     <script>
         function redirect() {
-            location.href = '/submit/' + location.pathname.split('/').at(-1);
+            location.href = isAuthenticated ? '/submit/' + location.pathname.split('/').at(-1) : '/login';
         }
+
+        isAuthenticated = false;
+    
+        (async () => {
+            try {
+                const response = await fetch('/auth-status/check', {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    isAuthenticated = data.isAuthenticated;
+                } else {
+                    console.log(response.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+            
+            document.querySelector('button').innerHTML = isAuthenticated ? 'Submit an answer' : 'Login to submit';
+        })();
     </script>
 </body>
 </html>

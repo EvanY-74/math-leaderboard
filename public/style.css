@@ -47,7 +47,7 @@ body::after {
     z-index: -1; 
 }
 
-#back {
+.back {
     position: absolute;
     top: 10px;
     left: 10px;
@@ -69,6 +69,7 @@ main {
 body * {
     font-family: Poppins;
     color: var(--white);
+    word-break: break-all;
 }
 
 h1 {
@@ -84,13 +85,17 @@ h2 {
     font-size: 2vw;
     font-weight: 400;
     text-align: left;
-    margin: 0.1em;
+    margin: 0.5em 0;
 }
 
 p {
     font-weight: 300;
     line-height: 1.7em;
     width: 100%;
+}
+
+strong {
+    font-weight: 600;
 }
 
 .center {
@@ -141,7 +146,8 @@ table.problems tr td:nth-child(4) {
 
 .buttons-container {
     display: flex;
-    justify-content: stretch;
+    justify-content: space-between;
+    gap: 1em;
     width: 100%;
 }
 
@@ -184,6 +190,9 @@ form {
     display: inline-block;
     min-width: 20%;
     margin: 0 2em;
+}
+
+form label {
     font-size: 2vw;
 }
 
@@ -194,6 +203,7 @@ form #message {
     font-weight: 600;
     text-align: center;
     padding: 0.75em;
+    box-sizing: border-box;
 }
 
 .red {
@@ -269,9 +279,97 @@ input[type="checkbox"], input[type="radio"] {
   opacity: 1;
 }
 
-
 form input {
     display: block;
     font-size: 1.5vw;
     font-family: poppins;
+}
+
+/* #submissions label {
+    word-break: break-all;
+} */
+
+#submissions button {
+    display: inline-block;
+    padding: 0.5em 0.75em;
+    margin-right: 1em;
+    margin-top: 0.5em;
+    color: var(--white);
+    width: 9em;
+    border-radius: 3px;
+    border: none;
+}
+#submissions button:first-of-type {
+    box-shadow: 0 0 8px #1faf2e80,
+                0 0 16px #1faf2e60;
+}
+#submissions button:last-of-type {
+    box-shadow: 0 0 8px #ff202080,
+                0 0 16px #ff202060;
+}
+#submissions button:disabled {
+    background-color: #7b7b7b;
+    box-shadow: 0 0 8px #00000080,
+                0 0 16px #00000060;
+}
+
+#chat {
+    width: 90%;
+    margin-top: 1em;
+}
+
+#chat * {
+    font-size: 1.25vw;
+}
+
+#chat article {
+    display: block;
+    padding: 1em;
+    background-color: black;
+    border: 2px solid #636363;
+    border-radius: 10px;
+    height: 50vh;
+    overflow-y: auto;
+}
+
+#chat > div {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+}
+
+#chat button {
+    all: unset;
+    padding: 0.5em;
+    margin: 0.25em;
+    background-color: var(--primary);
+    color: var(--white);
+    border-radius: 3px;
+    word-break: keep-all;
+}
+
+#chat label {
+    display: inline;
+    font-weight: 600;
+}
+#chat label::after {
+    content: ': ';
+}
+
+#chat div {
+    margin-top: 0.5em;
+}
+
+#chat p {
+    display: inline;
+}
+
+#chat .you {
+    color: #ffb76a
+    /* font-weight: 400; */
+}
+
+#chat time {
+    display: block;
+    color: #787878;
 }

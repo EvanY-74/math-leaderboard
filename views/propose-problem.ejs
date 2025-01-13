@@ -7,7 +7,7 @@
     <title>Math Leaderboard</title>
 </head>
 <body>
-    <a id="back" href="/account">← account</a>
+    <a class="back" href="/account">← account</a>
     <main>
         <h1>Propose a problem</h1>
         <hr>
@@ -35,7 +35,7 @@
         const form = document.querySelector('form');
         const submitButton = document.querySelector('form button');
         
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async e => {
             e.preventDefault();
             const name = form.name.value;
             const description = form.description.value;
@@ -44,7 +44,7 @@
             const answer = form.answer.value;
 
             try {
-                const response = await fetch('/propose_problem', {
+                const response = await fetch('/propose-problem', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, description, content, testable, answer }),

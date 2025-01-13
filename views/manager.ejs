@@ -4,17 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
+    <style>
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Firefox */
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        form {
+            align-self: flex-start;
+            margin: 1em 0;
+        }
+
+        form label {
+            font-size: 1.5vw;
+        }
+
+        form button.primary {
+            font-size: 1.5vw;
+            margin: 0.5em;
+            border-radius: 10px;
+            margin: 0.75em 0;
+        }
+    </style>
     <title>Math Leaderboard</title>
 </head>
 <body>
+    <a class="back" href="/account">← account</a>
     <main>
         <h1>Manager Dashboard</h1>
         <hr>
+        <h2>Add or remove verifiers</h2>
+        <form>
+            <label for="username">username</label>
+            <input type="text" id="username" name="username">
+            <label for="problem">problem id</label>
+            <input type="number" name="problem" id="problem">
+            <div class="buttons-container">
+                <button class="primary">Add</button>
+                <button class="primary">Remove</button>
+            </div>
+            <label id="response"></label>
+        </form>
         <% if (locals.proposedProblems?.length > 0) { %>
             <h2>Proposed Problems</h2>
             <ul>
                 <% for (const problem of locals.proposedProblems) { %>
-                    <li><a href="/manager/<%= problem.id %>"><%= problem.name %></a></li>
+                    <li><a href="/manager/proposed-problems/<%= problem.id %>"><%= problem.name %></a></li>
                     <label><%= problem.description %></label>
                 <% } %>
             </ul>
@@ -22,5 +63,43 @@
             <p>No new problems proposed</p>
         <% } %>
     </main>
+    <script>
+        const form = document.querySelector('form');
+        const buttons = document.querySelectorAll('form button');
+        const responseMessage = document.getElementById('response');
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault(); 
+
+            const action = e.submitter.innerHTML.toLowerCase();
+            const username = form.username.value.toLowerCase();
+            const problemId = form.problem.value;
+
+            buttons[0].disabled = true;
+            buttons[1].disabled = true;
+            try {
+                const response = await fetch('/manager/verifiers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, username, problemId }),
+                });
+                
+
+                if (response.redirected) {
+                    location.href = response.url;
+                } else if (response.ok) {
+                    const data = await response.json();
+
+                    buttons[0].disabled = false;
+                    buttons[1].disabled = false;
+                    responseMessage.innerHTML = data.message;
+                } else {
+                    console.log(response.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+    </script>
 </body>
 </html>

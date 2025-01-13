@@ -7,13 +7,24 @@
     <title>Math Leaderboard</title>
 </head>
 <body>
+    <% if (locals.role == 'manager' || locals.role == 'admin') { %>
+        <a class="back" href="/manager">← manager</a>
+    <% } %>
     <main>
         <h1><span style="color: #818181">#<%= locals.rank || '??' %></span> <%= username %> - 1280</h1>
         <hr>
-        <p class="center">Joined <%= (new Date(dateJoined)).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+        <p class="center">Joined <%= (new Date(dateJoined)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
         <p class="center"><%= accountDescription %></p>
         <h2>Problems Solved: 3</h2>
         <p style="white-space: nowrap; overflow-x: auto">a, b, c</p>
+        <% if (verifyingProblems.length != 0) { %>
+            <h2>Verifier Problems</h2>
+            <ul>
+                <% for (const [id, name] of verifyingProblems) { %>
+                    <li><a href="/verifier/<%= id %>"><%= name %></a></li>
+                <% } %>
+            </ul>
+        <% } %>
         <% if (proposedProblems.length != 0) { %>
             <h2>Proposed Problems</h2>
             <ul>
@@ -26,7 +37,7 @@
         <h2 class="center">Actions</h2>
         <div class="buttons-container">
             <button class="primary" onclick="redirect('/problems')">View problems</button>
-            <button class="primary" onclick="redirect('/propose_problem')">Propose new problem</button>
+            <button class="primary" onclick="redirect('/propose-problem')">Propose new problem</button>
         </div>
     </main>
     <script>
