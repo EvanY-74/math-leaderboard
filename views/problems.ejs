@@ -7,6 +7,7 @@
     <title>Math Leaderboard</title>
 </head>
 <body>
+    <a class="back" href="/account">← account</a>
     <main>
         <h1>Problems</h1>
         <hr>
@@ -26,7 +27,7 @@
                                 <td><a href="/problems/<%= problem.id %>"><%= problem.name %></a></td>
                                 <td><%= problem.description%></td>
                                 <td><%= problem.creatorName %></td>
-                                <td><%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+                                <td><%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
                             </tr>
                         <% } %>
                     </table>
