@@ -60,7 +60,7 @@
                 if (response.redirected) {
                     location.href = response.url;
                 } else if (response.ok) {
-                    console.log('hi')
+                    // console.log('hi')
                     const data = await response.json();
                     if (data.error) return console.error(data.error);
                     socket.emit('vote', { room, id, approving });
@@ -104,19 +104,20 @@
             messages.appendChild(div);
         }
 
-        socket.on('vote', packet => {
-            const { id, approving } = packet;
-            const elements = document.querySelectorAll('#submissions > div');
-            if (!elements) return;
-            // add 1 to approve or reject
-            for (const element of elements) {
-                if (element.querySelector('span').innerHTML != id) continue;
-                const button = element.querySelector(approving ? '.green' : '.red');
-                console.log(button);
-                const splitStr = button.innerHTML.split(' ');
-                button.innerHTML = splitStr[0] + (splitStr.length == 1 ? ' (1)' : ` (${parseInt(splitStr[1].slice(1, -1)) + 1})`);
-                break;
-            }
+        socket.on('vote', submissions => {
+            
+            // const { id, approving } = packet;
+            // const elements = document.querySelectorAll('#submissions > div');
+            // if (!elements) return;
+            // // add 1 to approve or reject
+            // for (const element of elements) {
+            //     if (element.querySelector('span').innerHTML != id) continue;
+            //     const button = element.querySelector(approving ? '.green' : '.red');
+            //     console.log(button);
+            //     const splitStr = button.innerHTML.split(' ');
+            //     button.innerHTML = splitStr[0] + (splitStr.length == 1 ? ' (1)' : ` (${parseInt(splitStr[1].slice(1, -1)) + 1})`);
+            //     break;
+            // }
         });
 
         function sendMessage() {
