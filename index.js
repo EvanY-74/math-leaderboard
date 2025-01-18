@@ -199,35 +199,35 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
     res.render('verifier', { submissions: filteredSubmissions });
 });
 
-app.post('/verifier/:id', authenticateToken, async (req, res) => {
-    if (!req?.body) return res.sendStatus(400);
-    // authorization
-    if (!isVerifierOfProblem(req.user, req?.params?.id)) return res.redirect('/invalid-permissions');
+// app.post('/verifier/:id', authenticateToken, async (req, res) => {
+//     if (!req?.body) return res.sendStatus(400);
+//     // authorization
+//     if (!isVerifierOfProblem(req.user, req?.params?.id)) return res.redirect('/invalid-permissions');
 
-    const { id, approving } = req.body;
-    if (id == undefined || approving == undefined) return res.sendStatus(422);
-    const submission = submissions.find(submission => submission.id == parseInt(id));
-    if (!submission) return res.status(409).json({ error: true, message: 'submission was not found' });
-    const hasVoted = submission.approved.includes(req.user.id) || submission.rejected.includes(req.user.id);
-    if (hasVoted) return res.status(422).json({ error: true, message: 'You have already voted' });
-    const totalVerifiers = users.reduce((count, user) => (isVerifierOfProblem(user, submission.problemId) ? count + 1 : count), 0);
-    if (approving) {
-        submission.approved.push(req.user.id);
-        if ((submission.rejected.length == 0 && submission.approved >= Math.min(totalVerifiers * 0.3, 5)) || submission.approved / totalVerifiers > 0.5) {
-            const result = await query(`UPDATE submissions SET status = 'approved' WHERE id = $1`, [submission.id]);
-            if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to upload rejection' });
-            submission.status = 'approved';
-        }
-    } else {
-        submission.rejected.push(req.user.id);
-        if (submission.rejected.length / totalVerifiers >= 0.5 || (totalVerifiers > 4 && submission.rejected.length > submission.approved.length)) {
-            const result = await query(`UPDATE submissions SET status = 'rejected' WHERE id = $1`, [submission.id]);
-            if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to upload rejection' });
-            submission.status = 'rejected';
-        }
-    }
-    console.log(submission, totalVerifiers);
-});
+//     const { id, approving } = req.body;
+//     if (id == undefined || approving == undefined) return res.sendStatus(422);
+//     const submission = submissions.find(submission => submission.id == parseInt(id));
+//     if (!submission) return res.status(409).json({ error: true, message: 'submission was not found' });
+//     const hasVoted = submission.approved.includes(req.user.id) || submission.rejected.includes(req.user.id);
+//     if (hasVoted) return res.status(422).json({ error: true, message: 'You have already voted' });
+//     const totalVerifiers = users.reduce((count, user) => (isVerifierOfProblem(user, submission.problemId) ? count + 1 : count), 0);
+//     if (approving) {
+//         submission.approved.push(req.user.id);
+//         if ((submission.rejected.length == 0 && submission.approved >= Math.min(totalVerifiers * 0.3, 5)) || submission.approved / totalVerifiers > 0.5) {
+//             const result = await query(`UPDATE submissions SET status = 'approved' WHERE id = $1`, [submission.id]);
+//             if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to upload rejection' });
+//             submission.status = 'approved';
+//         }
+//     } else {
+//         submission.rejected.push(req.user.id);
+//         if (submission.rejected.length / totalVerifiers >= 0.5 || (totalVerifiers > 4 && submission.rejected.length > submission.approved.length)) {
+//             const result = await query(`UPDATE submissions SET status = 'rejected' WHERE id = $1`, [submission.id]);
+//             if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to upload rejection' });
+//             submission.status = 'rejected';
+//         }
+//     }
+//     console.log(submission, totalVerifiers);
+// });
 
 let chatHistory = {};
 
@@ -254,6 +254,7 @@ io.on('connection', socket => {
         const { room, message } = packet;
         if (!room || !message) return socket.emit('error', 'invalid body');
         if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to message this room');
+        const hasVoted = submission.approved.includes(req.user.id) || submission.rejected.includes(req.user.id);
         const chatLog = {
             username: socket.user.username,
             message,
@@ -268,13 +269,22 @@ io.on('connection', socket => {
         const { room, id, approving } = packet;
         if (!room || id == undefined || approving == undefined) return socket.emit('error', 'invalid body');
         if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to use this room');
+        const hasVoted = 
         const chatLog = {
             username: 'server',
             message: `${socket.user.message} has ${approving ? 'approved' : 'rejected'} ${username}'s submission`,
             timestamp: new Date()
         }
         socket.broadcast.to(room).emit('message', chatLog);
-        io.in(room).emit('vote', { id, approving });
+        const filteredSubmissions = submissions.filter(submission => submission.problemId == room);
+        io.in(room).emit('vote', [
+            ...filteredSubmissions.map(submission => ({
+                approved: submission.approved.length,
+                rejected: submission.rejected.length,
+                hasVoted: 
+            }))
+        ]);
+        // io.in(room).emit('vote', { id, approving });
         chatHistory[room].push(chatLog); 
     });
 });
