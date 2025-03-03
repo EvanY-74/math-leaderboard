@@ -43,7 +43,7 @@
             transition: background-color 0.5s linear;
         }
     </style>
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
     <a class="back" href="/problems">← view problem</a>
@@ -53,9 +53,9 @@
         <p style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap; box-sizing: border-box"><%= problem.content %></p>
         <p><%= problem.testable ? 'Automatically checked (still requires manually approval)' : 'Manual grading' %></p>
         <label for="answer">Answer</label>
-        <input id="answer" name="answer" type="text">
+        <input id="answer" name="answer" type="text" maxlength="255">
         <label for="proof">Proof</label>
-        <input id="proof" name="proof" type="text" placeholder="paste link like a google doc here">
+        <input id="proof" name="proof" type="text" maxlength="255" placeholder="paste link like a google doc here">
         <div class="buttons-container">
             <button class="primary">Submit</button>
         </div>
@@ -63,7 +63,7 @@
     <div id="message"></div>
     <canvas></canvas>
     <script>
-        document.getElementById("back").href = '/problems/' + location.pathname.split('/').at(-1);
+        document.querySelector('.back').href = '/problems/' + location.pathname.split('/').at(-1);
 
         const canvas = document.querySelector('canvas');
         const ctx = canvas.getContext('2d');

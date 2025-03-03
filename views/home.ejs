@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
     <main>
-        <h1 style="font-size: 10vw;">Math Leaderboard</h1>
+        <h1 style="font-size: 10vw;">Math League</h1>
         <p class="center">Did you know that 1 + 1 doesn't equal 1?</p>
-        <div class="buttons-container">
-            <button class="primary" style="height: 5em; margin: 1em" onclick="redirect('/leaderboard')">See leaderboard</button>
-            <button class="primary" style="height: 5em; margin: 1em" onclick="redirect('/problems')">View problems</button>
+        <a href="What is this?">What is this?</a>
+        <!-- <div class="buttons-container"> -->
+        <div>
+            <button class="primary" onclick="redirect('/leaderboard')">See leaderboard</button>
+            <button class="primary" onclick="redirect('/problems')">View problems</button>
+            <button class="primary" onclick="redirect('/login')">Login</button>
+            <button class="primary" onclick="redirect('/signup')">Make an account</button>
         </div>
     </main>
     <script>
