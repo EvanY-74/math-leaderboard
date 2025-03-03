@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math League</title>
+</head>
+<body>
+    <a class="back" href="/account">← account</a>
+    <h1>Verifier Dashboard</h1>
+    <h2 class="center"><%= locals.verifierName || '' %></h2>
+    <hr>
+    <main>
+        <h2 class="center">Submissions</h2>
+        <div>
+            <ul id="submissions">
+                <% if (submissions.length > 0) { %>
+                    <% const maxLength = 20 %>
+                    <% for (const submission of submissions) { %>
+                        <li>
+                            <p><%= submission.answer %> - <strong><%= submission.username %></strong>, <%= (new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) %></p>
+                            <label><a href="<%= submission.proofLink %>"><%= submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink %></a></label>
+                            <button class="green" <%= submission.hasVoted ? 'disabled' : '' %>>approve<%= submission.approved.length == 0 ? '' : ` (${submission.approved.length})` %></button>
+                            <button class="red" <%= submission.hasVoted ? 'disabled' : '' %>>reject<%= submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})` %></button>
+                            <span style="display: none"><%= submission.id %></span>
+                        </li>
+                    <% } %>
+                <% } else { %>
+                        <p>No new submissions</p>
+                <% } %>
+            </ul>
+        </div>
+        <section id="chat">
+            <article id="messages"></article>
+            <div>
+                <input type="text" id="messageInput" style="width: 100%" placeholder="message">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </section>
+    </main>
+    <!-- <script src="/socket.io/socket.io.js"></script> -->
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        const submissionsElement = document.getElementById('submissions');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.querySelector('button');
+        const messages = document.getElementById('messages');
+        const verifierName = document.querySelector('h2').innerHTML;
+        const maxLength = 20;
+
+        const room = location.pathname.split('/').at(-1);
+
+        document.querySelectorAll('ul button').forEach(element => element.addEventListener('click', async e => {
+            const submissionId = e.target.parentElement.querySelector('span').innerHTML;
+            const approving = [...e.target.classList].includes('green');
+            // console.log(id, [...e.target.classList].includes('green'))
+            
+            socket.emit('vote', { room, submissionId, approving });
+        }));
+
+        socket.emit('join_room', location.pathname.split('/').at(-1));
+
+        socket.on('join_room_response', chatHistory => {
+            if (!chatHistory) return;
+            chatHistory.forEach(message => renderMessage(message));
+        });
+
+        // socket.on('message', message => {
+        //     renderMessage(message);
+        // });
+        socket.on('message', renderMessage);
+
+        function renderMessage(packet) {
+            let { username, message, timestamp } = packet;
+
+            const div = document.createElement('div');
+            const label = document.createElement('label');
+            label.innerHTML = username;
+            const p = document.createElement('p');
+            p.innerHTML = message;
+            if (username == 'you') {
+                label.classList.add('you');
+                p.classList.add('you');
+            }
+            const time = document.createElement('time');
+            time.innerHTML = (new Date(timestamp)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+            div.appendChild(label);
+            div.appendChild(p);
+            div.appendChild(time);
+            messages.appendChild(div);
+        }
+
+        socket.on('vote', submissions => {
+            submissionsElement.textContent = '';
+            if (submissions.length == 0) {
+                const p = document.createElement('p');
+                p.innerHTML = 'No new submissions';
+                submissionElement.appendChild(p);
+                return;
+            }
+
+            submissions.forEach(submission => {
+                const li = document.createElement('li');
+                const p = document.createElement('p');
+                p.innerHTML = `${submission.answer} - <strong>${submission.username}</strong>, ${(new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}`;
+                li.appendChild(p);
+                const label = document.createElement('label');
+                label.innerHTML = `<a href="${submission.proofLink}">${submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink}</a></label>`;
+                li.appendChild(label);
+                const greenButton = document.createElement('button');
+                const redButton = document.createElement('button');
+                greenButton.classList.add('green');
+                redButton.classList.add('red');
+                const hasVoted = submission.approved.some(username => username.toLowerCase() == verifierName.toLowerCase()) || submission.rejected.some(username => username.toLowerCase() == verifierName.toLowerCase());
+                greenButton.innerHTML = 'approve' + (submission.approved.length == 0 ? '' : ` (${submission.approved.length})`);
+                redButton.innerHTML = 'reject' + (submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})`);
+                greenButton.disabled = hasVoted;
+                redButton.disabled = hasVoted;
+                li.appendChild(greenButton);
+                li.appendChild(redButton);
+                
+                const span = document.createElement('span');
+                span.style.display = 'none';
+                span.innerHTML = submission.id;
+                li.appendChild(span);
+
+                submissionsElement.appendChild(li);
+            });
+            
+            // const { id, approving } = packet;
+            // const elements = document.querySelectorAll('#submissions > div');
+            // if (!elements) return;
+            // // add 1 to approve or reject
+            // for (const element of elements) {
+            //     if (element.querySelector('span').innerHTML != id) continue;
+            //     const button = element.querySelector(approving ? '.green' : '.red');
+            //     console.log(button);
+            //     const splitStr = button.innerHTML.split(' ');
+            //     button.innerHTML = splitStr[0] + (splitStr.length == 1 ? ' (1)' : ` (${parseInt(splitStr[1].slice(1, -1)) + 1})`);
+            //     break;
+            // }
+        });
+
+        function sendMessage() {
+            socket.emit('message', { room, message: messageInput.value });
+            renderMessage({ username: 'you', message: messageInput.value, timestamp: new Date() });
+            messageInput.value = '';
+        }
+
+        messageInput.addEventListener('keyup', e => {
+            if (e.key == 'Enter') sendMessage();
+        });
+
+        socket.on('error', (message) => {
+            console.error(message);
+        });
+
+        socket.on('disconnect', () => {
+            console.error('Server disconnected');
+        })
+    </script>
+</body>
+</html>

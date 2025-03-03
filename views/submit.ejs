@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        label, input {
+            align-self: flex-start;
+        }
+
+        input {
+            width: 40%;
+        }
+
+        .buttons-container {
+            margin-top: 1em;
+        }
+
+        #message {
+            position: fixed;
+            top: 150%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            border-radius: 10px;
+            text-align: center;
+            padding: 2em;
+            z-index: 2;
+            font-size: 1.75vw;
+
+            transition: top 1s;
+        }
+
+        canvas {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            background-color: rgba(0, 0, 0, 0);
+
+            transition: background-color 0.5s linear;
+        }
+    </style>
+    <title>Math League</title>
+</head>
+<body>
+    <a class="back" href="/problems">← view problem</a>
+    <main>
+        <h1><%= problem.name %></h1>
+        <!-- <hr> -->
+        <p style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap; box-sizing: border-box"><%= problem.content %></p>
+        <p><%= problem.testable ? 'Automatically checked (still requires manually approval)' : 'Manual grading' %></p>
+        <label for="answer">Answer</label>
+        <input id="answer" name="answer" type="text" maxlength="255">
+        <label for="proof">Proof</label>
+        <input id="proof" name="proof" type="text" maxlength="255" placeholder="paste link like a google doc here">
+        <div class="buttons-container">
+            <button class="primary">Submit</button>
+        </div>
+    </main>
+    <div id="message"></div>
+    <canvas></canvas>
+    <script>
+        document.querySelector('.back').href = '/problems/' + location.pathname.split('/').at(-1);
+
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const message = document.getElementById('message');
+
+        
+        function resize() {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+        }
+        resize();
+
+        window.addEventListener('resize', resize);
+
+        const GRAVITY = 0.0008;
+        const DRAG = .03;
+        const COLORS = ['#ff6384', '#36a2eb', '#ffcd56', '#4bc0c0', '#9966ff', '#ff9f40', '#79e314', '#fc4243'];
+        // const COLORS = ['#e81416', '#ffa500', '#faeb36', '#79c314', '#487de7', '#4b369d', '#70369d'];
+        // const confettiSound = document.getElementById('confettiSound');
+
+        class ConfettiPiece {
+            constructor(x, y, width, height, color, velocity) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.drag = DRAG / this.width;
+                this.color = color;
+                this.velocity = velocity;
+            }
+
+            update(delta) {
+                // console.log(this.velocity.y * this.drag)
+                // console.log(this.velocity.y)
+                this.velocity.y += this.velocity.y == 0 ? GRAVITY : (GRAVITY - (this.velocity.y * this.drag)) * delta;
+                this.x += this.velocity.x * delta
+                this.y += this.velocity.y * delta;
+                this.velocity.x *= 0.999 ** delta;
+                // this.velocity.y = Math.min(this.velocity.y, this.drag * delta);
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+        let previousTimestamp = 0;
+        let confetti = [];
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+
+        function success(rejected = false) {
+            canvas.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            canvas.style.display = 'block';
+            if (rejected) return;
+            answerInput.value = '';
+            for (let i = 0; i < 500; i++) {
+                const width = randomInt(10, 12);
+                const height = width * 1.618;
+                const x = canvas.width / 2;
+                const y = canvas.height;
+                const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                const velocity = {
+                    x: Math.random() * 3 - 1.5,
+                    y: -1 - Math.random() * 8
+                };
+                velocity.x *= canvas.width / 1000
+                velocity.y *= canvas.height / 1000
+                confetti.push(new ConfettiPiece(x, y, width, height, color, velocity));
+            }
+
+            // confettiSound.play();
+            init(0);
+        }
+
+        function init(timestamp) {
+            const delta = !previousTimestamp ? 0 : timestamp - previousTimestamp;
+            if (!previousTimestamp) previousTimestamp = timestamp;
+            else previousTimestamp = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw confetti
+            confetti = confetti.filter(piece => piece.y - piece.height < canvas.height && piece.x + piece.width > 0 && piece.x - piece.width < canvas.width);
+            confetti.forEach(piece => {
+                piece.update(delta);
+                piece.draw();
+            });
+
+            requestAnimationFrame(init);
+        }
+
+        // ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        // ctx.fillRect(0, 0, innerWidth, innerHeight);
+
+        const submitButton = document.querySelector('button');
+        const answerInput = document.getElementById('answer');
+        let submitted = false;
+
+        submitButton.addEventListener('mouseup', async e => {
+            e.preventDefault();
+            if (submitted) return;
+            
+            const answer = answerInput.value.trim();
+            const proof = document.getElementById('proof').value.trim();
+
+            try {
+                const response = await fetch(location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answer, proof })
+                });
+                
+                if (response.redirected) {
+                    location.href = response.url;
+                } else if (response.ok) {
+                    const data = await response.json();
+
+                    submitted = true;
+                    message.innerHTML = data.message;
+                    message.style.top = '50%';
+                    if (data.correct == true) {
+                        message.style.backgroundColor = '#1faf2e';
+                        success();
+                    } else if (data.correct == 'pending') {
+                        message.style.backgroundColor = '#7b7b7b';
+                        success();
+                    } else {
+                        message.style.backgroundColor = '#ff2020';
+                        success(true);
+                    }
+                    // if (data.correct)
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

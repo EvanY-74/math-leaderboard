@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Math League</title>
+</head>
+<body>
+    <main>
+        <h1>Log in</h1>
+        <form>
+            <p id="message" class="red" style="display: none"></p>
+            <label for="username">name </label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">password </label>
+            <input type="password" id="password" name="password" required>
+            <div class="buttons-container">
+                <button style="margin: 1em 0 0 0" class="primary">Log in</button>
+            </div>
+            <p class="center">Don't have an account? <a href="/signup">Sign up</a></p>
+        </form>
+    </main>
+    <script>
+        const form = document.querySelector('form');
+        const message = document.getElementById('message');
+        const submitButton = document.querySelector('form button');
+        
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const username = form.username.value;
+            const password = form.password.value;
+
+            submitButton.innerHTML = 'Loading';
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                submitButton.innerHTML = 'Log in';
+                message.style.display = 'block';
+                if (response.ok) {
+                    message.innerHTML = 'redirecting';
+                    message.classList.remove('red');
+                    message.classList.add('green');
+                    location.href = '/account';
+                } else {
+                    message.innerHTML = data.message || data.errorCode || 'server error';
+                    message.classList.remove('green');
+                    message.classList.add('red');
+                }
+            } catch (error) {
+                console.error(error);
+                message.innerHTML = 'client error';
+                message.classList.remove('green');
+                message.classList.add('red');
+                
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math League</title>
+</head>
+<body>
+    <a class="back" href="/account">← account</a>
+    <main>
+        <h1>Problems</h1>
+        <hr>
+        <section style="display: flex; width: 100%; flex-direction: column-reverse">
+            <% const groupedDifficulty = problems.reduce((acc, problem) => { %>
+                <% const { difficulty } = problem; %>
+                <% if (!acc[difficulty]) acc[difficulty] = []; %>
+                <% acc[difficulty].push(problem); %>
+                <% return acc; %>
+            <% }, {}); %>
+            <% for (const [difficulty, group] of Object.entries(groupedDifficulty)) { %>
+                <div style="margin: 2em 0">
+                    <h2 class="center"><%= difficulty %></h2>
+                    <table class="problems">
+                        <% for (const problem of group) { %>
+                            <tr>
+                                <td><a href="/problems/<%= problem.id %>"><%= problem.name %></a></td>
+                                <td><%= problem.description%></td>
+                                <td><%= problem.creatorName %></td>
+                                <td><%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+                            </tr>
+                        <% } %>
+                    </table>
+                </div>
+            <% } %>
+        </section>
+    </main>
+</body>
+</html>
