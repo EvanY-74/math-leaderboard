@@ -4,30 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
     <a class="back" href="/account">← account</a>
     <h1>Verifier Dashboard</h1>
+    <h2 class="center"><%= locals.verifierName || '' %></h2>
     <hr>
     <main>
         <h2 class="center">Submissions</h2>
         <div>
-        <% if (submissions.length > 0) { %>
-            <% const maxLength = 20 %>
             <ul id="submissions">
-                <% for (const submission of submissions) { %>
-                    <li><%= submission.answer %> - <strong><%= submission.username %></strong>, <%= (new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) %></li>
-                    <label><a href="<%= submission.proofLink %>"><%= submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink %></a></label>
-                    <span style="display: none"><%= submission.id %></span>
-                    <br>
-                    <button class="green" <%= submission.hasVoted ? 'disabled' : '' %>>approve<%= submission.approved.length == 0 ? '' : ` (${submission.approved.length})` %></button>
-                    <button class="red" <%= submission.hasVoted ? 'disabled' : '' %>>reject<%= submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})` %></button>
+                <% if (submissions.length > 0) { %>
+                    <% const maxLength = 20 %>
+                    <% for (const submission of submissions) { %>
+                        <li>
+                            <p><%= submission.answer %> - <strong><%= submission.username %></strong>, <%= (new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) %></p>
+                            <label><a href="<%= submission.proofLink %>"><%= submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink %></a></label>
+                            <button class="green" <%= submission.hasVoted ? 'disabled' : '' %>>approve<%= submission.approved.length == 0 ? '' : ` (${submission.approved.length})` %></button>
+                            <button class="red" <%= submission.hasVoted ? 'disabled' : '' %>>reject<%= submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})` %></button>
+                            <span style="display: none"><%= submission.id %></span>
+                        </li>
+                    <% } %>
+                <% } else { %>
+                        <p>No new submissions</p>
                 <% } %>
             </ul>
-        <% } else { %>
-            <p>No new submissions</p>
-        <% } %>
         </div>
         <section id="chat">
             <article id="messages"></article>
@@ -41,38 +43,24 @@
     <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script>
         const socket = io();
+        const submissionsElement = document.getElementById('submissions');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.querySelector('button');
         const messages = document.getElementById('messages');
+        const verifierName = document.querySelector('h2').innerHTML;
+        const maxLength = 20;
+
+        const room = location.pathname.split('/').at(-1);
 
         document.querySelectorAll('ul button').forEach(element => element.addEventListener('click', async e => {
-            try {
-                const id = e.target.parentElement.querySelector('span').innerHTML;
-                const approving = [...e.target.classList].includes('green');
-                console.log(id, [...e.target.classList].includes('green'))
-                const response = await fetch(location.href, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, approving }),
-                });
-
-
-                if (response.redirected) {
-                    location.href = response.url;
-                } else if (response.ok) {
-                    // console.log('hi')
-                    const data = await response.json();
-                    if (data.error) return console.error(data.error);
-                    socket.emit('vote', { room, id, approving });
-                    e.target.parentElement.querySelectorAll('button').forEach(button => button.disabled = true);
-                }
-            } catch (error) {
-                console.error(error);
-            }
+            const submissionId = e.target.parentElement.querySelector('span').innerHTML;
+            const approving = [...e.target.classList].includes('green');
+            // console.log(id, [...e.target.classList].includes('green'))
+            
+            socket.emit('vote', { room, submissionId, approving });
         }));
 
         socket.emit('join_room', location.pathname.split('/').at(-1));
-        const room = location.pathname.split('/').at(-1);
 
         socket.on('join_room_response', chatHistory => {
             if (!chatHistory) return;
@@ -105,6 +93,41 @@
         }
 
         socket.on('vote', submissions => {
+            submissionsElement.textContent = '';
+            if (submissions.length == 0) {
+                const p = document.createElement('p');
+                p.innerHTML = 'No new submissions';
+                submissionElement.appendChild(p);
+                return;
+            }
+
+            submissions.forEach(submission => {
+                const li = document.createElement('li');
+                const p = document.createElement('p');
+                p.innerHTML = `${submission.answer} - <strong>${submission.username}</strong>, ${(new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}`;
+                li.appendChild(p);
+                const label = document.createElement('label');
+                label.innerHTML = `<a href="${submission.proofLink}">${submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink}</a></label>`;
+                li.appendChild(label);
+                const greenButton = document.createElement('button');
+                const redButton = document.createElement('button');
+                greenButton.classList.add('green');
+                redButton.classList.add('red');
+                const hasVoted = submission.approved.some(username => username.toLowerCase() == verifierName.toLowerCase()) || submission.rejected.some(username => username.toLowerCase() == verifierName.toLowerCase());
+                greenButton.innerHTML = 'approve' + (submission.approved.length == 0 ? '' : ` (${submission.approved.length})`);
+                redButton.innerHTML = 'reject' + (submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})`);
+                greenButton.disabled = hasVoted;
+                redButton.disabled = hasVoted;
+                li.appendChild(greenButton);
+                li.appendChild(redButton);
+                
+                const span = document.createElement('span');
+                span.style.display = 'none';
+                span.innerHTML = submission.id;
+                li.appendChild(span);
+
+                submissionsElement.appendChild(li);
+            });
             
             // const { id, approving } = packet;
             // const elements = document.querySelectorAll('#submissions > div');

@@ -22,8 +22,8 @@ let submissions;
     problems = await update('problems');
     submissions = await update('submissions');
     submissions.forEach(submission => {
-        submission.approved = [];
-        submission.rejected = [];
+        submission.approved = new Set();
+        submission.rejected = new Set();
     });
     console.log('Done fetching');
 })();
@@ -44,8 +44,31 @@ app.get('/home', (req, res) => {
     res.render('home');
 });
 
+app.get('/about', (req, res) => {
+    res.render('about');
+});
+
 app.get('/leaderboard', (req, res) => {
-    res.render('leaderboard');
+    const problemMapping = problems.reduce((map, problem) => {
+        map[problem.id] = problem;
+        return map;
+    }, {});
+    const leaderboard = users.map(user => {
+        const hardestProblem = user.solvedProblems.reduce((accumulator, current) => {
+            const problem = problemMapping[current];
+            if (problem.difficulty > accumulator.difficulty || (problem.difficulty == accumulator.difficulty && new Date(current.date) > new Date(accumulator.date))) return problem;
+            return accumulator;
+        }, { name: 'none', difficulty: 0, date: new Date() });
+        // console.log(user.rank);
+        return {
+            rank: user.rank,
+            points: user.points,
+            username: user.username,
+            problemsSolved: user.solvedProblems.length,
+            hardestProblem
+        };
+    });
+    res.render('leaderboard', { users: leaderboard });
 });
 
 app.get('/problems', (req, res) => {
@@ -63,7 +86,7 @@ app.get('/problems/:id', (req, res) => {
     res.render('problem', { problem });
 });
 
-const DISALLOWED_USERNAMES = ['admin', 'root', 'server', 'terminal', 'you', ' ', '.', '_'];
+const DISALLOWED_USERNAMES = ['admin', 'root', 'server', 'terminal', 'you', 'me', ' ', '.', '_'];
 
 app.get('/signup', (req, res) => {
     res.render('signup');
@@ -73,6 +96,7 @@ app.post('/signup', async (req, res) => {
     if (!req.body) return res.sendStatus(400);
     const { username, email, password } = req.body;
     if (!username || !password) return res.status(422).json({ message: 'username or password is empty' });
+    if (username.length > 64) return res.status(422).json({ message: 'username too long' });
     if (DISALLOWED_USERNAMES.includes(username.toLowerCase())) return res.status(400).json({ message: 'Invalid username' });
 
     
@@ -105,10 +129,10 @@ app.post('/login', async (req, res) => {
     let result = await query('SELECT username, password FROM users WHERE username = $1', [username]);
     if (result instanceof Error) return res.status(500).json({ errorCode: result.code });
     result = result?.rows;
-    if (!result || result.length == 0) return res.status(401).json({ message: 'Invalid username' });
+    if (!result || result.length == 0) return res.status(401).json({ message: 'Incorrect username' });
 
     const match = await bcrypt.compare(password, result[0].password);
-    if (!match) return res.status(401).json({ message: 'Invalid password' });
+    if (!match) return res.status(401).json({ message: 'Incorrect password' });
 
     createAuthToken(username, res);
 });
@@ -150,7 +174,7 @@ app.get('/auth-status/check', (req, res) => {
 function authenticateToken(req, res, next) {
     const token = req?.headers?.cookie?.replace('accessToken=', '');
     const authStatus = authenticateTokenHelper(token);
-    console.log(authStatus?.user?.username || authStatus?.message);
+    // console.log(authStatus?.user?.username || authStatus?.message);
     if (!authStatus.isAuthenticated) {
         return res.status(401).redirect('/login');
     }
@@ -168,17 +192,41 @@ app.get('/invalid-permissions', (req, res) => {
 })
 
 app.get('/account', authenticateToken, (req, res) => {
-    const userProposedProblems = proposedProblems.filter(problem => problem.creatorName.toLowerCase() == req.user.username.toLowerCase());
+    const queryUsername = req.query?.username;
+    let user;
+    let ownAccount = true;
+    if (queryUsername) {
+        user = users.find(user => user.username.toLowerCase() == queryUsername.toLowerCase());
+        if (!user) return res.redirect('/account/user-not-found');
+        ownAccount = false;
+    } else user = req.user;
     // get problems user is verifying if applicable
     let verifyingProblems = [];
-    if (req.user.verifyingProblems.length > 0) {
+    if (user.verifyingProblems.length > 0 && ownAccount) {
         const mapping = problems.reduce((map, problem) => {
             map[problem.id] = problem.name;
             return map;
         }, {});
-        verifyingProblems = req.user.verifyingProblems.map(id => [id, mapping[id]]);
+        verifyingProblems = user.verifyingProblems.map(id => [id, mapping[id]]);
     }
-    res.render('account', { ...req.user, proposedProblems: userProposedProblems, verifyingProblems });
+    const userProposedProblems = ownAccount ? proposedProblems.filter(problem => problem.creatorName.toLowerCase() == user.username.toLowerCase()) : [];
+
+    let solvedProblems = user.solvedProblems.map(id => problems.find(problem => problem.id == id));
+    solvedProblems = solvedProblems.sort((a, b) => b.difficulty - a.difficulty || new Date(b.timeCreated) - new Date(a.timeCreated));
+
+    res.render('account', { ownAccount, ...user, solvedProblems, proposedProblems: userProposedProblems, verifyingProblems });
+});
+
+app.patch('/account/description', authenticateToken, async (req, res) => {
+    if (req.body?.description == undefined) return res.status(400).json({ error: true, message: 'description is required' });
+    let result = await query(`UPDATE users SET account_description = $1 WHERE id = $2`, [req.body.description, req.user.id]);
+    if (result instanceof Error) return res.status(500).json({ error: true, message: 'database error' });
+    req.user.accountDescription = req.body.description;
+    res.json({ message: 'Successfully updated description' });
+});
+
+app.get('/account/user-not-found', (req, res) => {
+    res.render('message', { h1: 'User not found', p: 'The user you are looking for does not exist.', redirectUrl: 'leaderboard' });
 });
 
 function isVerifierOfProblem(user, problemId) {
@@ -192,11 +240,11 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
     const filteredSubmissions = [];
     submissions.forEach(submission => {
         if (submission.problemId == req.params?.id) {
-            const hasVoted = submission.approved.includes(req.user.id) || submission.rejected.includes(req.user.id);
-            filteredSubmissions.push({ ...submission, hasVoted });
+            const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
+            filteredSubmissions.push({ ...submission, approved: Array.from(submission.approved), rejected: Array.from(submission.rejected), hasVoted });
         }
     });
-    res.render('verifier', { submissions: filteredSubmissions });
+    res.render('verifier', { submissions: filteredSubmissions, verifierName: req.user.username });
 });
 
 // app.post('/verifier/:id', authenticateToken, async (req, res) => {
@@ -254,7 +302,6 @@ io.on('connection', socket => {
         const { room, message } = packet;
         if (!room || !message) return socket.emit('error', 'invalid body');
         if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to message this room');
-        const hasVoted = submission.approved.includes(req.user.id) || submission.rejected.includes(req.user.id);
         const chatLog = {
             username: socket.user.username,
             message,
@@ -264,28 +311,65 @@ io.on('connection', socket => {
         chatHistory[room].push(chatLog); 
     });
 
-    socket.on('vote', packet => {
+    socket.on('vote', async packet => {
         if (!packet) return socket.emit('error', 'no body');
-        const { room, id, approving } = packet;
-        if (!room || id == undefined || approving == undefined) return socket.emit('error', 'invalid body');
+        const { room, submissionId, approving } = packet;
+        if (!room || submissionId == undefined || approving == undefined) return socket.emit('error', 'invalid body');
         if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to use this room');
-        const hasVoted = 
-        const chatLog = {
-            username: 'server',
-            message: `${socket.user.message} has ${approving ? 'approved' : 'rejected'} ${username}'s submission`,
-            timestamp: new Date()
-        }
-        socket.broadcast.to(room).emit('message', chatLog);
+        const submission = submissions.find(submission => submission.id == submissionId);
+        if (!submission) return socket.emit('error', 'submission was not found'); // should basically always be false as socket.rooms should only have valid rooms
+        if (submission != 'pending') socket.emit('error', 'submissions has already been processed');
+        const hasVoted = submission.approved.has(socket.user.id) || submission.rejected.has(socket.user.id);
+        if (hasVoted) return socket.emit('error', 'You have already voted');
+
         const filteredSubmissions = submissions.filter(submission => submission.problemId == room);
+        const totalVerifiers = users.reduce((count, user) => (isVerifierOfProblem(user, submission.problemId) ? count + 1 : count), 0);
+        if (approving) {
+            submission.approved.add(socket.user.id);
+            if (submission.approved.size / totalVerifiers > 0.5 || (submission.rejected.size == 0 && submission.approved.size >= Math.min(totalVerifiers * 0.3, 4))) {
+                let result = await query(`UPDATE submissions SET status = 'approved' WHERE id = $1`, [submission.id]);
+                if (result instanceof Error) return socket.emit('error', 'Failed to update submission');
+                submission.status = 'approved';
+
+                const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty * 10;
+                result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
+                if (result instanceof Error) return socket.emit('error', 'Failed to update score');
+                // socket.user.score += pointsEarned;
+                users = await update('users');
+            }
+        } else {
+            submission.rejected.add(socket.user.id);
+            if (submission.rejected.size / totalVerifiers >= 0.5 || (totalVerifiers > 4 && submission.rejected.size > submission.approved.size && submission.rejected.size >= Math.min(totalVerifiers * 0.33, 3))) {
+                const result = await query(`UPDATE submissions SET status = 'rejected' WHERE id = $1`, [submission.id]);
+                if (result instanceof Error) return socket.emit('error', 'Failed to update submission');
+                submission.status = 'rejected';
+            }
+        }
+
+        const userMap = users.reduce((map, user) => {
+            map[user.id] = user.username;
+            return map;
+        }, {});
+
         io.in(room).emit('vote', [
             ...filteredSubmissions.map(submission => ({
-                approved: submission.approved.length,
-                rejected: submission.rejected.length,
-                hasVoted: 
+                answer: submission.answer,
+                username: submission.username,
+                timeSubmitted: submission.timeSubmitted,
+                proofLink: submission.proofLink,
+                approved: Array.from(submission.approved).map(id => userMap[id]),
+                rejected: Array.from(submission.rejected).map(id => userMap[id])
             }))
         ]);
         // io.in(room).emit('vote', { id, approving });
-        chatHistory[room].push(chatLog); 
+
+        // const chatLog = {
+        //     username: 'server',
+        //     message: `${socket.user.message} has ${approving ? 'approved' : 'rejected'} ${username}'s submission`,
+        //     timestamp: new Date()
+        // }
+        // socket.broadcast.to(room).emit('message', chatLog);
+        // chatHistory[room].push(chatLog); 
     });
 });
 
@@ -302,29 +386,6 @@ io.use((socket, next) => {
 
     next();
 });
-
-// io.use((socket, next) => {
-//     const cookies = socket.handshake.headers.cookie;
-//     const token = cookies?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
-
-//     if (!token) {
-//         return next(new Error('Authentication failed: No token provided'));
-//     }
-
-//     try {
-//         const jwtUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-//         const user = users.find(user => user.username.toLowerCase() === jwtUser.name.toLowerCase());
-//         if (!user) {
-//             return next(new Error('Authentication failed: User not found'));
-//         }
-//         socket.user = user;
-
-//         next();
-//     } catch (err) {
-//         return next(new Error('Authentication failed: Invalid token'));
-//     }
-// });
-
 
 
 app.get('/manager', authenticateToken, isManager, (req, res) => {
@@ -360,15 +421,19 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
     const proposedProblem = proposedProblems.find(problem => problem.id == req.params.id && problem.status == 'pending');
 
     if (req.body.approving) {
-        const { name, description, content, testable, difficulty } = req.body;
+        let { name, description, content, testable, difficulty } = req.body;
         if (!proposedProblem) return res.redirect('/manager/proposed-problems/does_not_exist');
-        if (!name || !content || testable === undefined || difficulty === undefined) return res.status(422).json({ message: 'One or more required fields are empty' });
+        difficulty = Number(difficulty);
+        if (!name || !content || testable == undefined || difficulty == undefined) return res.status(422).json({ message: 'One or more required fields are empty' });
+        if (problems.some(problem => problem.name == name)) return res.status(409).json({ message: 'Problem already exists' });
 
         let result = await query(`INSERT INTO problems (name, description, content, time_created, testable, answer, creator_id, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [name, description, content, proposedProblem.timeCreated, testable, proposedProblem.answer, proposedProblem.creatorId, difficulty]);
         if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to add to problems table' });
         problems = await update('problems');
+
         result = await query(`DELETE FROM proposed_problems WHERE id = $1`, [req.params.id]);
         if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to remove from proposed_problems' });
+
         proposedProblems = await update('proposedProblems');
     } if (req.body.reasoning !== null) {
         const result = await query(`UPDATE proposed_problems SET status = 'rejected', rejection_reasoning = $1 WHERE id = $2`, [req.body.reasoning || '', req.params.id]);
@@ -382,7 +447,7 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
 
 app.post('/manager/verifiers', authenticateToken, isManager, async (req, res) => {
     const { action, username, problemId } = req.body;
-    if (!action || !username || problemId === undefined) return res.sendStatus(400);
+    if (!action || !username || problemId == undefined) return res.sendStatus(400);
     const user = users.find(user => user.username.toLowerCase() == username); // req.user is the manager (not relevant)
     if (!user) return res.json({ message: 'User not found' });
     const problem = problems.find(problem => problem.id == problemId);
@@ -416,22 +481,17 @@ async function checkSubmissionCooldown(req, res, next) {
     const lastSubmission = await query(`SELECT time_submitted, status FROM submissions WHERE user_id = $1 AND problem_id = $2 ORDER BY time_submitted DESC LIMIT 1`, [req.user.id, problem.id]);
     if (lastSubmission instanceof Error) return res.status(500).json({ message: 'Database error' });
     if (lastSubmission.rows.length == 0) return next();
-    if (lastSubmission.rows[0].status == 'pending' || lastSubmission.rows[0].status == 'approved') return res.redirect('/message?status=' + lastSubmission.rows[0].status);
+    if (lastSubmission.rows[0].status == 'pending' || lastSubmission.rows[0].status == 'approved') return res.redirect('/submit/message?status=' + lastSubmission.rows[0].status);
 
     const lastSubmissionTime = new Date(lastSubmission.rows[0].time_submitted);
     const now = new Date();
     const timeSinceLastSubmission = now.getTime() - lastSubmissionTime.getTime();
-    console.log(timeSinceLastSubmission, lastSubmissionTime)
     if (timeSinceLastSubmission < PENALTY_TIME * 3600000) {
         const remainingTime = PENALTY_TIME - Math.ceil(timeSinceLastSubmission / 3600000);
         return res.redirect('/submit/message?status=penalty&time=' + remainingTime);
     }
     next();
 }
-
-// app.get('/submit', authenticateToken, (req, res) => {
-//     res.render('submit');
-// });
 
 app.get('/submit/message', (req, res) => {
     switch (req?.query?.status) {
@@ -460,7 +520,8 @@ app.post('/submit/:id', authenticateToken, checkSubmissionCooldown, async (req, 
     const status = req.problem.testable && !correct ? 'rejected' : 'pending';
     const result = await query(`INSERT INTO submissions (answer, user_id, problem_id, proof_link, status) VALUES ($1, $2, $3, $4, $5)`, [answer, req.user.id, req.problem.id, proof, status]);
     if (result instanceof Error) return res.status(500).json({ message: 'Database error' });
-    submissions = update('submissions');
+    submissions = (await update('submissions')).map((submission, i) => ({ ...submission, approved: submissions[i]?.approved || [], rejected: submissions[i]?.rejected || [] }));
+
     if (status == 'rejected') {
         res.json({ correct, message: `You answer was incorrect :( Please wait ${PENALTY_TIME} hours before resubmitting.` });
     } else if (req.problem.testable) {
@@ -476,7 +537,7 @@ app.get('/propose-problem', authenticateToken, (req, res) => {
 
 app.post('/propose-problem', authenticateToken, async (req, res) => {
     const { name, description, content, testable, answer } = req.body;
-    if (!name || !content || testable === undefined || !answer) return res.status(422).json({ message: 'One or more required fields are empty' });
+    if (!name || !content || testable == undefined || !answer) return res.status(422).json({ message: 'One or more required fields are empty' });
 
     const result = await query(`INSERT INTO proposed_problems (name, description, content, testable, answer, creator_id) VALUES ($1, $2, $3, $4, $5, $6)`, [name, description, content, testable, answer.trim(), req.user.id]);
     if (result instanceof Error) return res.status(500).json({ message: 'Database error' });

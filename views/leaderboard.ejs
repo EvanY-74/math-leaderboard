@@ -4,9 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
-    
+    <a class="back" href="/account">← account</a>
+    <main>
+        <h1>Leaderboard</h1>
+        <!-- <hr> -->
+        <section id="leaderboard">
+            <div>
+                <span></span>
+                <span>rank</span>
+                <span>Points</span>
+                <span>Username</span>
+                <span>Solved</span>
+                <span>Hardest Problem</span>
+            </div>
+            <hr style="width: 100%">
+            <% for (const user of users) { %>
+                <div>
+                    <span>#</span>
+                    <span><%= user.rank %> </span>
+                    <span><%= user.points %></span>
+                    <span><a class="no-style" href="/account?username=<%= encodeURIComponent(user.username) %>"><%= user.username %></a></span>
+                    <span><%= user.problemsSolved %> </span>
+                    <span><%= user.hardestProblem.name %><%= user.hardestProblem.difficulty != 0 ? ` (${user.hardestProblem.difficulty})` : '' %></span>
+                </div>
+            <% } %>
+    </main>
 </body>
 </html>

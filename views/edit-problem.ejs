@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
     <a class="back" href="/manager">← manager</a>
@@ -13,19 +13,19 @@
         <hr>
         <form style="width: 100%">
             <input style="display: inline" type="text" name="name" value="<%= problem.name %>" required><label style="display: inline"> made by <%= problem.creatorName %></label><br>
-            <input type="text" name="description" style="width: 100%" placeholder="optional" value="<%= locals.problem?.description || '' %>">
-            <textarea name="content" rows="6" required><%= problem.content %></textarea>
+            <input type="text" name="description" style="width: 100%" maxlength="300" placeholder="optional" value="<%= locals.problem?.description || '' %>">
+            <textarea name="content" rows="6" maxlength="3000" required><%= problem.content %></textarea>
             <label>Can this problem be automatically graded?</label><br>
-            <input type="checkbox" id="testable" name="testable" <%= problem.testable ? 'checked' : '' %>><label style="display: inline; font-size: 1em" for="testable">yes</label><br>
+            <input type="checkbox" id="testable" name="testable" <%= problem.testable ? 'checked' : '' %>><label style="display: inline; font-size: 1.25em; margin: 0.25em 0" for="testable"><%= problem.testable ? 'yes' : 'no' %></label><br>
             <label for="difficulty">Initial difficulty</label>
-            <input type="number" id="difficulty" name="difficulty">
+            <input type="number" id="difficulty" name="difficulty" required>
             <div class="buttons-container">
                 <button class="primary">Approve</button>
                 <button class="primary">Reject</button>
             </div>
             <div id="rejection-container" style="display: none">
                 <label for="reasoning">Rejection reasoning</label>
-                <textarea name="reasoning" id="reasoning" rows="3"></textarea>
+                <textarea name="reasoning" id="reasoning" maxlength="1000" rows="3"></textarea>
             <!-- <div class="buttons-container"> -->
                 <button class="primary">Submit</button>
             <!-- </div> -->
@@ -97,6 +97,12 @@
                 console.error(error);
                 // submitButton.innerHTML = 'client error';
             }
+        });
+
+        const checkboxLabel = document.querySelector('label[for=testable]');
+        const checkbox = document.querySelector('input[type=checkbox]');
+        checkbox.addEventListener('change', () => {
+            checkboxLabel.innerHTML = checkbox.checked ? 'yes' : 'no';
         });
     </script>
 </body>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
     <a class="back" href="/problems">← problems</a>
@@ -12,7 +12,7 @@
         <h1><%= problem.name %></h1>
         <p class="center"><%= problem.description %><br><strong>Difficulty: <%= problem.difficulty %> | <%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></strong></p>
         <!-- <hr> -->
-        <p style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap"><%= problem.content %></p>
+        <p id="content" style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap"><%= problem.content %></p>
         <p><%= problem.testable ? 'Automatically checked (still requires manually approval)' : 'Manual grading' %></p>
         <h2>Solved:</h2>
         <p style="white-space: nowrap; overflow-x: auto">a, b, c</p>
@@ -24,6 +24,27 @@
         function redirect() {
             location.href = isAuthenticated ? '/submit/' + location.pathname.split('/').at(-1) : '/login';
         }
+        const contentElement = document.getElementById('content');
+        const unformattedContent = contentElement.innerHTML;
+        let content = '', i = 0, inLink = true;
+        while (i < unformattedContent.length) {
+            if (unformattedContent[i] == '@' && unformattedContent[i + 1] == '{') {
+                inLink = true;
+                content += '<a href="';
+                i += 2;
+            } else if (inLink && unformattedContent[i] == '|') {
+                content += '" target="_blank">';
+                i++;
+            } else if (inLink && unformattedContent[i] == '}' && unformattedContent[i + 1] == '@') {
+                inLink = false;
+                content += '</a>';
+                i += 2;
+            } else {
+                content += unformattedContent[i];
+                i++;
+            }
+        }
+        contentElement.innerHTML = content;
 
         isAuthenticated = false;
     

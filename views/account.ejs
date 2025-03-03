@@ -4,46 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
-    <title>Math Leaderboard</title>
+    <title>Math League</title>
 </head>
 <body>
-    <% if (locals.role == 'manager' || locals.role == 'admin') { %>
+    <% if (!ownAccount) { %>
+        <a class="back" href="/leaderboard">← leaderboard</a>
+    <% } else if (locals.role == 'manager' || locals.role == 'admin') { %>
         <a class="back" href="/manager">← manager</a>
     <% } %>
     <main>
-        <h1><span style="color: #818181">#<%= locals.rank || '??' %></span> <%= username %> - 1280</h1>
+        <h1><span style="color: #818181"><a id="leaderboard-link" href="/leaderboard">#<%= locals.rank || '??' %></span></a> <%= username %> - <%= points %></h1>
         <hr>
-        <p class="center">Joined <%= (new Date(dateJoined)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
-        <p class="center"><%= accountDescription %></p>
-        <h2>Problems Solved: 3</h2>
-        <p style="white-space: nowrap; overflow-x: auto">a, b, c</p>
-        <% if (verifyingProblems.length != 0) { %>
-            <h2>Verifier Problems</h2>
-            <ul>
-                <% for (const [id, name] of verifyingProblems) { %>
-                    <li><a href="/verifier/<%= id %>"><%= name %></a></li>
-                <% } %>
-            </ul>
+        <p class="center" style="margin-bottom: 0">Joined <%= (new Date(dateJoined)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></p>
+        <p class="center" id="description" contenteditable="false"><%= accountDescription %></p>
+        <% if (ownAccount) { %>
+            <div>
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <!--Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                    <path d="M441 58.9L453.1 71c9.4 9.4 9.4 24.6 0 33.9L424 134.1 377.9 88 407 58.9c9.4-9.4 24.6-9.4 33.9 0zM209.8 256.2L344 121.9 390.1 168 255.8 302.2c-2.9 2.9-6.5 5-10.4 6.1l-58.5 16.7 16.7-58.5c1.1-3.9 3.2-7.5 6.1-10.4zM373.1 25L175.8 222.2c-8.7 8.7-15 19.4-18.3 31.1l-28.6 100c-2.4 8.4-.1 17.4 6.1 23.6s15.2 8.5 23.6 6.1l100-28.6c11.8-3.4 22.5-9.7 31.1-18.3L487 138.9c28.1-28.1 28.1-73.7 0-101.8L474.9 25C446.8-3.1 401.2-3.1 373.1 25zM88 64C39.4 64 0 103.4 0 152L0 424c0 48.6 39.4 88 88 88l272 0c48.6 0 88-39.4 88-88l0-112c0-13.3-10.7-24-24-24s-24 10.7-24 24l0 112c0 22.1-17.9 40-40 40L88 464c-22.1 0-40-17.9-40-40l0-272c0-22.1 17.9-40 40-40l112 0c13.3 0 24-10.7 24-24s-10.7-24-24-24L88 64z"/>
+                </svg>
+                <svg class="icon" style="display: none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                    <!--Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                    <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
+                </svg>
+            </div>
         <% } %>
-        <% if (proposedProblems.length != 0) { %>
-            <h2>Proposed Problems</h2>
-            <ul>
-                <% for (const problem of proposedProblems) { %>
-                    <li><%= problem.name %></li>
-                    <label style="white-space: pre-wrap">status: <%= problem.status %><%= problem.status == 'rejected' ? ' | reasoning:\n' + problem.rejectionReasoning : '' %></label>
-                <% } %>
-            </ul>
+        <h2>Problems Solved: <%= solvedProblems.length %></h2>
+        <!-- <div style="display: inline-block;"> -->
+            <p style="white-space: nowrap; overflow-x: auto">
+        <!-- </p> -->
+            <% solvedProblems.forEach((problem, i) => { %>
+                <a id="solved-problems" href="/problems/<%= problem.id %>"><%= problem.name %></a><%= i < solvedProblems.length - 1 ? ', ' : '' %>
+            <% }); %>
+        <% if (ownAccount) { %>
+            <% if (verifyingProblems.length != 0) { %>
+                <h2>Problems Verifying</h2>
+                <ul>
+                    <% for (const [id, name] of verifyingProblems) { %>
+                        <li><a href="/verifier/<%= id %>"><%= name %></a></li>
+                    <% } %>
+                </ul>
+            <% } %>
+            <% if (proposedProblems.length != 0) { %>
+                <h2>Proposed Problems</h2>
+                <ul>
+                    <% for (const problem of proposedProblems) { %>
+                        <li><%= problem.name %></li>
+                        <label style="white-space: pre-wrap">status: <%= problem.status %><%= problem.status == 'rejected' ? ' | reasoning:\n' + problem.rejectionReasoning : '' %></label>
+                    <% } %>
+                </ul>
+            <% } %>
+            <h2 class="center">Actions</h2>
+            <div class="buttons-container">
+                <button class="primary" onclick="redirect('/problems')">View problems</button>
+                <button class="primary" onclick="redirect('/propose-problem')">Propose new problem</button>
+            </div>
         <% } %>
-        <h2 class="center">Actions</h2>
-        <div class="buttons-container">
-            <button class="primary" onclick="redirect('/problems')">View problems</button>
-            <button class="primary" onclick="redirect('/propose-problem')">Propose new problem</button>
-        </div>
     </main>
+    <% if (ownAccount) { %>
     <script>
         function redirect(link) {
             location.href = link;
         }
+
+        let editing = false;
+        const description = document.getElementById('description');
+        const icons = document.getElementsByClassName('icon');
+        icons[0].addEventListener('click', () => {
+            description.contentEditable = 'plaintext-only';
+            icons[0].style.display = 'none';
+            icons[1].style.display = 'inline';
+        });
+        icons[1].addEventListener('click', async () => {
+            description.contentEditable = 'false';
+            icons[0].style.display = 'inline';
+            icons[1].style.display = 'none';
+
+            try {
+                const response = await fetch('/account/description', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: description.textContent }),
+                });
+
+                if (response.redirected) {
+                    location.href = response.url;
+                } else if (!response.ok) {
+                    console.log(response.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        });
     </script>
+    <% } %>
 </body>
 </html>

@@ -28,28 +28,47 @@ async function update(table) {
     switch (table) {
         case 'users':
             result = await query(`
-                SELECT users.id, username, date_joined, role, account_description,
-                COALESCE(ARRAY_AGG(verifiers.problem_id), '{}') AS problem_ids
+                SELECT 
+                    users.id, 
+                    username, 
+                    date_joined, 
+                    role, 
+                    account_description,
+                    COALESCE(ARRAY_AGG(verifiers.problem_id), '{}') AS problem_ids,
+                    COALESCE(SUM(solves.points_granted), 0) AS points,
+                    COALESCE(
+                        ARRAY_AGG(solves.problem_id ORDER BY solves.time_approved DESC), 
+                        '{}'
+                    ) AS solved_problems
                 FROM 
                     users
                 LEFT JOIN 
                     verifiers ON users.id = verifiers.user_id
+                LEFT JOIN 
+                    solves ON users.id = solves.user_id
                 GROUP BY 
                     users.id
+                ORDER BY 
+                    points DESC,
+                    username ASC;
             `);
             if (result instanceof Error) {
                 console.error(result);
                 return;
             } 
-            return result.rows.map((row, i) => ({
+            let users = result.rows.map((row, i) => ({
                 id: row.id,
                 username: row.username,
+                points: row.points,
                 rank: i + 1,
                 dateJoined: row.date_joined,
                 role: row.role,
                 accountDescription: row.account_description,
-                verifyingProblems: row.problem_ids
-            }));
+                solvedProblems: row.solved_problems[0] == null ? [] : row.solved_problems,
+                verifyingProblems: row.problem_ids[0] == null ? [] : row.problem_ids
+            })) || [];
+            rankUsers(users);
+            return users;
         case 'proposedProblems':   
             result = await query('SELECT proposed_problems.*, users.username FROM proposed_problems JOIN users ON proposed_problems.creator_id = users.id ORDER BY time_created');
             if (result instanceof Error) {
@@ -68,7 +87,7 @@ async function update(table) {
                 creatorName: row.username,
                 status: row.status,
                 rejectionReasoning: row.rejection_reasoning
-            }));
+            })) || [];
         case 'problems':
             result = await query(`SELECT problems.*, users.username FROM problems JOIN users ON problems.creator_id = users.id ORDER BY difficulty DESC`);
             if (result instanceof Error) {
@@ -86,7 +105,7 @@ async function update(table) {
                 creatorId: row.creator_id,
                 creatorName: row.username,
                 difficulty: row.difficulty
-            }));
+            })) || [];
         case 'submissions':
             result = await query(`SELECT submissions.id, time_submitted, answer, proof_link, users.username, problem_id FROM submissions JOIN users ON submissions.user_id = users.id WHERE status = 'pending' ORDER BY time_submitted`);
             if (result instanceof Error) {
@@ -100,10 +119,26 @@ async function update(table) {
                 timeSubmitted: row.time_submitted,
                 answer: row.answer,
                 proofLink: row.proof_link,
-            }));
+            })) || [];
         default:
             console.error('Invalid table:', table);
     }
+}
+
+function rankUsers(users, preSorted = true) {
+    if (!preSorted) users = users.sort((a, b) => b.points - a.points);
+
+    let currentRank = 1;
+    let currentPoints = -Infinity;
+    users.forEach((user, i) => {
+        if (user.points == currentPoints) {
+            user.rank = currentRank;
+        } else {
+            user.rank = i + 1;
+            currentRank = user.rank;
+            currentPoints = user.points;
+        }
+    });
 }
 
 module.exports = { query, update };
