@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Math League</title>
+</head>
+<body>
+    <main>
+        <h1 style="font-size: 10vw;">Math League</h1>
+        <!-- <p class="center">Did you know that 1 + 1 doesn't equal 1?</p> -->
+        <h2>What is this?</h2>
+        <p>The Math League is a friendly competition testing your math skills. You can attempt problems of various difficulties and gain points.</p>
+        <h2>How it works</h2>
+        <ol>
+            <li>Select a problem</li>
+            <li>Solve the problem</li>
+            <li>Submit answer (linking proof)</li>
+            <li>Wait for approval</li>
+            <li>Gain points and compete on the leaderboard!</li>
+        </ol>
+        <!-- <p>Once you have selected a problem and have a possible answer, you can submit it. Then verifiers of that problem will check its validity. Once this is done, points will be added to your total. You can see this total on the leaderboard compared to others.</p> -->
+        <h2>Rules</h2>
+        <ul>
+            <li>Any calculator up to the complexity of <a href="https://www.desmos.com/calculator" target="_blank">desmos</a> is allowed.</li>
+            <li>All excess resources like websites or tutorials must be cited in proof.</li>
+            <li>You may use math notes without requiring citation.</li>
+            <li>You cannot any online equation solvers.</li>
+            <li>AI tools are not allowed.</li>
+        </ul>
+        <h2>What now?</h2>
+        <p>Look at some of the problems you would like to solve or view the leaderboard.</p>
+        <div class="buttons-container">
+            <button class="primary" style="height: 5em; margin: 1em" onclick="redirect('/problems')">View problems</button>
+            <button class="primary" style="height: 5em; margin: 1em" onclick="redirect('/leaderboard')">See leaderboard</button>
+        </div>
+    </main>
+    <script>
+        function redirect(link) {
+            location.href = link;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+    "name": "math-leaderboard",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/EvanY-74/math-leaderboard.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/EvanY-74/math-leaderboard/issues"
+    },
+    "homepage": "https://github.com/EvanY-74/math-leaderboard#readme",
+    "dependencies": {
+        "bcrypt": "^5.1.1",
+        "dotenv": "^16.4.7",
+        "ejs": "^3.1.10",
+        "express": "^4.21.2",
+        "jsonwebtoken": "^9.0.2",
+        "pg": "^8.13.1",
+        "socket.io": "^4.8.1",
+        "socket.io-client": "^4.8.1"
+    }
+}
