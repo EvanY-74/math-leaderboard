@@ -29,6 +29,10 @@ let submissions;
     console.log('Done fetching');
 })();
 
+function invalidInput(value) {
+    return value === '' || value == undefined || value == null || isNaN(value);
+}
+
 // app.set('view engine', 'ejs');
 // app.use(express.static(path.join(__dirname, 'public')));
 app.set("views", path.join(__dirname, "views"));
@@ -100,7 +104,7 @@ app.get('/signup', (req, res) => {
 app.post('/signup', async (req, res) => {
     if (!req.body) return res.sendStatus(400);
     const { username, email, password } = req.body;
-    if (!username || !password) return res.status(422).json({ message: 'username or password is empty' });
+    if (invalidInput(username) || invalidInput(password)) return res.status(422).json({ message: 'username or password is empty' });
     if (username.length > 64) return res.status(422).json({ message: 'username too long' });
     if (DISALLOWED_USERNAMES.includes(username.toLowerCase())) return res.status(400).json({ message: 'Invalid username' });
 
@@ -112,7 +116,7 @@ app.post('/signup', async (req, res) => {
         VALUES ($1, $2, $3)
         ON CONFLICT (username) DO NOTHING
         RETURNING username`,
-        [username, hashedPassword, email]
+        [username, hashedPassword, email || '']
     );
     if (result instanceof Error) return res.status(500).json({ errorCode: result.code });
 
@@ -129,7 +133,7 @@ app.get('/login', (req, res) => {
 app.post('/login', async (req, res) => {
     if (!req?.body) return res.sendStatus(400);
     const { username, password } = req.body;
-    if (!username || !password) return res.status(422).json({ message: 'username or password are empty' });
+    if (invalidInput(username) || invalidInput(password)) return res.status(422).json({ message: 'username or password are empty' });
     
     let result = await query('SELECT username, password FROM users WHERE username = $1', [username]);
     if (result instanceof Error) return res.status(500).json({ errorCode: result.code });
@@ -276,7 +280,7 @@ io.on('connection', socket => {
     socket.on('message', packet => {
         if (!packet) return socket.emit('error', 'no body');
         const { room, message } = packet;
-        if (!room || !message) return socket.emit('error', 'invalid body');
+        if (!room || !message || typeof message !== 'string') return socket.emit('error', 'invalid body');
         if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to message this room');
         const chatLog = {
             username: socket.user.username,
@@ -307,7 +311,7 @@ io.on('connection', socket => {
                 if (result instanceof Error) return socket.emit('error', 'Failed to update submission');
                 submission.status = 'approved';
 
-                const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty * 10;
+                const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty;
                 result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
                 if (result instanceof Error) return socket.emit('error', 'Failed to update score');
                 // socket.user.score += pointsEarned;
@@ -400,7 +404,7 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
         let { name, description, content, testable, difficulty } = req.body;
         if (!proposedProblem) return res.redirect('/manager/proposed-problems/does_not_exist');
         difficulty = Number(difficulty);
-        if (!name || !content || testable == undefined || difficulty == undefined) return res.status(422).json({ message: 'One or more required fields are empty' });
+        if (invalidInput(name) || invalidInput(content) || invalidInput(testable) || isNaN(difficulty)) return res.status(422).json({ message: 'One or more required fields are empty' });
         if (problems.some(problem => problem.name == name)) return res.status(409).json({ message: 'Problem already exists' });
 
         let result = await query(`INSERT INTO problems (name, description, content, time_created, testable, answer, creator_id, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [name, description, content, proposedProblem.timeCreated, testable, proposedProblem.answer, proposedProblem.creatorId, difficulty]);
@@ -423,7 +427,7 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
 
 app.post('/manager/verifiers', authenticateToken, isManager, async (req, res) => {
     const { action, username, problemId } = req.body;
-    if (!action || !username || problemId == undefined) return res.sendStatus(400);
+    if (!action || invalidInput(username) || problemId == undefined) return res.sendStatus(400);
     const user = users.find(user => user.username.toLowerCase() == username); // req.user is the manager (not relevant)
     if (!user) return res.json({ message: 'User not found' });
     const problem = problems.find(problem => problem.id == problemId);
@@ -490,9 +494,9 @@ app.get('/submit/:id', authenticateToken, checkSubmissionCooldown, (req, res) =>
 
 app.post('/submit/:id', authenticateToken, checkSubmissionCooldown, async (req, res) => {
     const { answer, proof } = req.body;
-    if (!answer || !proof) return res.sendStatus(422);
+    if (invalidInput(answer) || invalidInput(proof)) return res.sendStatus(422);
 
-    const correct = req.body.answer == req.problem.answer; // will (probably) be false if testable = false
+    const correct = req.body.answer == req.problem.answer || Number(req.body.answer) == Number(req.body.answer); // will (probably) be false if testable = false
     const status = req.problem.testable && !correct ? 'rejected' : 'pending';
     const result = await query(`INSERT INTO submissions (answer, user_id, problem_id, proof_link, status) VALUES ($1, $2, $3, $4, $5)`, [answer, req.user.id, req.problem.id, proof, status]);
     if (result instanceof Error) return res.status(500).json({ message: 'Database error' });
@@ -513,7 +517,7 @@ app.get('/propose-problem', authenticateToken, (req, res) => {
 
 app.post('/propose-problem', authenticateToken, async (req, res) => {
     const { name, description, content, testable, answer } = req.body;
-    if (!name || !content || testable == undefined || !answer) return res.status(422).json({ message: 'One or more required fields are empty' });
+    if (invalidInput(name) || invalidInput(content) || testable == undefined || invalidInput(answer)) return res.status(422).json({ message: 'One or more required fields are empty' });
 
     const result = await query(`INSERT INTO proposed_problems (name, description, content, testable, answer, creator_id) VALUES ($1, $2, $3, $4, $5, $6)`, [name, description, content, testable, answer.trim(), req.user.id]);
     if (result instanceof Error) return res.status(500).json({ message: 'Database error' });

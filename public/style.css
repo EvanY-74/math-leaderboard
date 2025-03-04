@@ -196,7 +196,7 @@ button.primary {
     text-align: center;
     color: color-mix(in hsl, var(--primary), black 92%);
     box-shadow: 0px 6px color-mix(in hsl, var(--primary), black 50%);
-    font-size: 2vw;
+    font-size: 1.8vw;
     font-weight: 500;
 
     transition: 0.25s;
