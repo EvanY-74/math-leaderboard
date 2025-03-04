@@ -30,7 +30,7 @@ let submissions;
 })();
 
 function invalidInput(value) {
-    return value === '' || value == undefined || value == null || isNaN(value);
+    return value === '' || value == undefined || value == null;
 }
 
 // app.set('view engine', 'ejs');
