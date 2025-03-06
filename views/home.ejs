@@ -9,8 +9,11 @@
 <body>
     <main>
         <h1 style="font-size: 10vw;">Math League</h1>
-        <p class="center">Website made by Evan Yango</p>
-        <a style="font-size: 2em" href="/about">What is this?</a>
+        <p class="center" style="margin-top: 0">Website made by Evan Yango</p>
+        <!-- <a style="font-size: 2em" href="/about">What is this?</a> -->
+        <button style="font-size: 2em" class="primary" onclick="redirect('/about')">What is this?</button>
+        <!-- <hr> -->
+        <h2 class="center" style="margin-bottom: 0">Navigate</h2>
         <div style="width: 100%">
             <div style="display: flex; margin: 1em">
                 <button class="primary" onclick="redirect('/leaderboard')">See leaderboard</button>
@@ -21,6 +24,7 @@
                 <button class="primary" onclick="redirect('/account')">Login</button>
             </div>
         </div>
+        <p class="center">Website is still in beta. Errors or even crashes :( might occur.</p>
     </main>
     <script>
         function redirect(link) {
