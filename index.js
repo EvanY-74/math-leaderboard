@@ -21,6 +21,7 @@ let submissions;
     users = await update('users');
     proposedProblems = await update('proposedProblems');
     problems = await update('problems');
+    console.log(problems);
     submissions = await update('submissions');
     submissions.forEach(submission => {
         submission.approved = new Set();
@@ -81,6 +82,7 @@ app.get('/leaderboard', (req, res) => {
 });
 
 app.get('/problems', (req, res) => {
+    console.log('number of problems', problems.length);
     res.render('problems', { problems });
 });
 
@@ -123,6 +125,7 @@ app.post('/signup', async (req, res) => {
     if (result.rows.length == 0) return res.status(409).json({ message: 'Username already exists.' });
 
     users = await update('users');
+    console.log('Signed up', username);
     createAuthToken(result.rows[0].username, res);
 });
 
@@ -148,8 +151,10 @@ app.post('/login', async (req, res) => {
 
 function createAuthToken(username, res) {
     const expiration = (process.env.JWT_EXPIRATION || '15') + 'min';
-    // console.log(expiration, username);
     const accessToken = jwt.sign({ username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: expiration });
+
+    console.log('Creating auth token for', username);
+
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: true,
@@ -403,9 +408,10 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
     if (req.body.approving) {
         let { name, description, content, testable, difficulty } = req.body;
         if (!proposedProblem) return res.redirect('/manager/proposed-problems/does_not_exist');
-        difficulty = Number(difficulty);
+        difficulty = parseInt(difficulty);
         if (invalidInput(name) || invalidInput(content) || invalidInput(testable) || isNaN(difficulty)) return res.status(422).json({ message: 'One or more required fields are empty' });
         if (problems.some(problem => problem.name == name)) return res.status(409).json({ message: 'Problem already exists' });
+        if (difficulty <= 0) return res.status(400).json({ message: 'difficulty must be positive' });
 
         let result = await query(`INSERT INTO problems (name, description, content, time_created, testable, answer, creator_id, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [name, description, content, proposedProblem.timeCreated, testable, proposedProblem.answer, proposedProblem.creatorId, difficulty]);
         if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to add to problems table' });
@@ -449,10 +455,6 @@ app.post('/manager/verifiers', authenticateToken, isManager, async (req, res) =>
         res.json({ message: 'Successfully removed verifier' });
     } else return res.sendStatus(400);
 });
-
-function addVerifier() {
-
-}
 
 const PENALTY_TIME = 18;
 
@@ -520,10 +522,11 @@ app.get('/propose-problem', authenticateToken, (req, res) => {
 });
 
 app.post('/propose-problem', authenticateToken, async (req, res) => {
-    const { name, description, content, testable, answer } = req.body;
+    const { name, description, content, testable, answer, difficulty } = req.body;
     if (invalidInput(name) || invalidInput(content) || testable == undefined || invalidInput(answer)) return res.status(422).json({ message: 'One or more required fields are empty' });
+    const numberedDifficulty = parseInt(difficulty);
 
-    const result = await query(`INSERT INTO proposed_problems (name, description, content, testable, answer, creator_id) VALUES ($1, $2, $3, $4, $5, $6)`, [name, description, content, testable, answer.trim(), req.user.id]);
+    const result = await query(`INSERT INTO proposed_problems (name, description, content, testable, answer, difficulty, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [name, description, content, testable, answer.trim(), (Number.isInteger(numberedDifficulty) && numberedDifficulty > 0) ? numberedDifficulty : null, req.user.id]);
     if (result instanceof Error) return res.status(500).json({ message: 'Database error' });
     proposedProblems = await update('proposedProblems');
 
