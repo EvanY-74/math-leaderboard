@@ -11,7 +11,8 @@
     <main>
         <h1>Problems</h1>
         <hr>
-        <section style="display: flex; width: 100%; flex-direction: column-reverse">
+        <p class="center" style="margin: 0">What will you solve today?</p>
+        <section style="display: flex; width: 100%; flex-direction: column">
             <% const groupedDifficulty = problems.reduce((acc, problem) => { %>
                 <% const { difficulty } = problem; %>
                 <% if (!acc[difficulty]) acc[difficulty] = []; %>
@@ -19,8 +20,8 @@
                 <% return acc; %>
             <% }, {}); %>
             <% for (const [difficulty, group] of Object.entries(groupedDifficulty)) { %>
-                <div style="margin: 2em 0">
-                    <h2 class="center"><%= difficulty %></h2>
+                <div style="margin: 1.75em 0">
+                    <h2 class="center"><span style="color: #929292">difficulty: </span><%= difficulty %></h2>
                     <table class="problems">
                         <% for (const problem of group) { %>
                             <tr>
