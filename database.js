@@ -82,6 +82,7 @@ async function update(table) {
                 content: row.content,
                 testable: row.testable,
                 answer: row.answer,
+                difficulty: row.difficulty,
                 timeCreated: row.time_created,
                 creatorId: row.creator_id,
                 creatorName: row.username,

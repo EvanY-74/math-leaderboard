@@ -17,8 +17,8 @@
             <textarea name="content" rows="6" maxlength="3000" required><%= problem.content %></textarea>
             <label>Can this problem be automatically graded?</label><br>
             <input type="checkbox" id="testable" name="testable" <%= problem.testable ? 'checked' : '' %>><label style="display: inline; font-size: 1.25em; margin: 0.25em 0" for="testable"><%= problem.testable ? 'yes' : 'no' %></label><br>
-            <label for="difficulty">Initial difficulty</label>
-            <input type="number" id="difficulty" name="difficulty" required>
+            <label for="difficulty">Difficulty</label>
+            <input type="number" min="1" step="1" id="difficulty" name="difficulty" required>
             <div class="buttons-container">
                 <button class="primary">Approve</button>
                 <button class="primary">Reject</button>
