@@ -25,7 +25,6 @@
                         <% for (const problem of group) { %>
                             <tr>
                                 <td><a href="/problems/<%= problem.id %>"><%= problem.name %></a></td>
-                                <td><%= problem.description%></td>
                                 <td><%= problem.creatorName %></td>
                                 <td><%= (new Date(problem.timeCreated)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
                             </tr>
@@ -35,5 +34,27 @@
             <% } %>
         </section>
     </main>
+    <script>
+        const back = document.querySelector('.back');
+        (async () => {
+            try {
+                const response = await fetch('/auth-status/check', {
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (!data.isAuthenticated) {
+                        back.innerHTML = '← home';
+                        back.href = '/home';
+                    }
+                } else {
+                    console.log(response.message);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        })();
+    </script>
 </body>
 </html>

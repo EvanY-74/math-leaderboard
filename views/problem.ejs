@@ -46,8 +46,8 @@
         }
         contentElement.innerHTML = content;
 
-        isAuthenticated = false;
-    
+        
+        let isAuthenticated = false;
         (async () => {
             try {
                 const response = await fetch('/auth-status/check', {

@@ -50,7 +50,7 @@
     <main>
         <h1><%= problem.name %></h1>
         <!-- <hr> -->
-        <p style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap; box-sizing: border-box"><%= problem.content %></p>
+        <p id="content" style="border: 2px solid rgba(255, 255, 255, 0.5); padding: 1em; white-space: pre-wrap; box-sizing: border-box"><%= problem.content %></p>
         <p><%= problem.testable ? 'Automatically checked (still requires manually approval)' : 'Manual grading' %></p>
         <label for="answer">Answer</label>
         <input id="answer" name="answer" type="text" maxlength="255">
@@ -64,6 +64,28 @@
     <canvas></canvas>
     <script>
         document.querySelector('.back').href = '/problems/' + location.pathname.split('/').at(-1);
+
+        const contentElement = document.getElementById('content');
+        const unformattedContent = contentElement.innerHTML;
+        let content = '', i = 0, inLink = true;
+        while (i < unformattedContent.length) {
+            if (unformattedContent[i] == '@' && unformattedContent[i + 1] == '{') {
+                inLink = true;
+                content += '<a href="';
+                i += 2;
+            } else if (inLink && unformattedContent[i] == '|') {
+                content += '" target="_blank">';
+                i++;
+            } else if (inLink && unformattedContent[i] == '}' && unformattedContent[i + 1] == '@') {
+                inLink = false;
+                content += '</a>';
+                i += 2;
+            } else {
+                content += unformattedContent[i];
+                i++;
+            }
+        }
+        contentElement.innerHTML = content;
 
         const canvas = document.querySelector('canvas');
         const ctx = canvas.getContext('2d');
