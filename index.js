@@ -450,6 +450,10 @@ app.post('/manager/verifiers', authenticateToken, isManager, async (req, res) =>
     } else return res.sendStatus(400);
 });
 
+function addVerifier() {
+
+}
+
 const PENALTY_TIME = 18;
 
 async function checkSubmissionCooldown(req, res, next) {
