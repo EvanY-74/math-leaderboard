@@ -414,8 +414,8 @@ app.post('/manager/proposed-problems/:id', authenticateToken, isManager, async (
         if (difficulty <= 0) return res.status(400).json({ message: 'difficulty must be positive' });
 
         let result = await query(`INSERT INTO problems (name, description, content, time_created, testable, answer, creator_id, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [name, description, content, proposedProblem.timeCreated, testable, proposedProblem.answer, proposedProblem.creatorId, difficulty]);
-        if (result instanceof Error || !result) return res.status(500).json({ errorCode: result.code, message: 'Failed to add to problems table' });
-        problems = await update('problems');
+        if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to add to problems table' });
+        if (result) problems = await update('problems');
 
         result = await query(`DELETE FROM proposed_problems WHERE id = $1`, [req.params.id]);
         if (result instanceof Error) return res.status(500).json({ errorCode: result.code, message: 'Failed to remove from proposed_problems' });
