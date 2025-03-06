@@ -64,8 +64,8 @@ async function update(table) {
                 dateJoined: row.date_joined,
                 role: row.role,
                 accountDescription: row.account_description,
-                solvedProblems: row.solved_problems[0] == null ? [] : row.solved_problems,
-                verifyingProblems: row.problem_ids[0] == null ? [] : row.problem_ids
+                solvedProblems: (row.solved_problems[0] == null ? [] : row.solved_problems) || [],
+                verifyingProblems: (row.problem_ids[0] == null ? [] : row.problem_ids) || [],
             })) || [];
             rankUsers(users);
             return users;
