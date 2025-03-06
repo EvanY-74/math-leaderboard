@@ -523,7 +523,7 @@ app.get('/propose-problem', authenticateToken, (req, res) => {
 
 app.post('/propose-problem', authenticateToken, async (req, res) => {
     const { name, description, content, testable, answer, difficulty } = req.body;
-    if (invalidInput(name) || invalidInput(content) || testable == undefined || invalidInput(answer)) return res.status(422).json({ message: 'One or more required fields are empty' });
+    if (invalidInput(name) || invalidInput(content) || testable == undefined) return res.status(422).json({ message: 'One or more required fields are empty' });
     const numberedDifficulty = parseInt(difficulty);
 
     const result = await query(`INSERT INTO proposed_problems (name, description, content, testable, answer, difficulty, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [name, description, content, testable, answer.trim(), (Number.isInteger(numberedDifficulty) && numberedDifficulty > 0) ? numberedDifficulty : null, req.user.id]);
