@@ -167,14 +167,21 @@ function createAuthToken(username, res) {
 }
 
 function authenticateTokenHelper(token) {
-    if (!token) return { isAuthenticated: false, message: 'no token' };
+    if (!token) {
+        console.log('no token');
+        return { isAuthenticated: false, message: 'no token' };
+    }
     
     try {
         const jwtUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const user = users.find(user => user.username.toLowerCase() === jwtUser.username.toLowerCase());
-        if (!user) return { isAuthenticated: false, message: 'user not found' };
+        if (!user) {
+            console.log('user not found', jwtUser);
+            return { isAuthenticated: false, message: 'user not found' };
+        }
         return { isAuthenticated: true, user };
     } catch (err) {
+        console.log(err);
         return { isAuthenticated: false, message: err };
     }
 };
