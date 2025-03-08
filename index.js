@@ -159,9 +159,9 @@ function createAuthToken(username, res) {
         httpOnly: true,
         secure: true,
         sameSite: 'Strict',
-        maxAge: (process.env.JWT_EXPIRATION || 15) * 60000
+        maxAge: (process.env.JWT_EXPIRATION || 30) * 60000
     });
-    res.json({ success: true });
+    res.redirect('/account');
     // TODO: Return the request back to the user in case of token expiration OR somehow alert the user client side that their token has expired on important pages (submissions)
     // Maybe (also) the cookie expiration could be max(till 12:00am, 1 hour)
 }
@@ -182,6 +182,7 @@ function authenticateTokenHelper(token) {
         return { isAuthenticated: true, user };
     } catch (err) {
         console.log(err);
+        console.log(users.map(users => users.username));
         return { isAuthenticated: false, message: err };
     }
 };
@@ -452,13 +453,13 @@ app.post('/manager/verifiers', authenticateToken, isManager, async (req, res) =>
         if (currentStat.rows.length != 0) return res.json({ message: 'user is already added' });
         const result = await query(`INSERT INTO verifiers (user_id, problem_id) VALUES ($1, $2)`, [user.id, problemId])
         if (result instanceof Error) return res.status(500).json({ message: 'database error' });
-        users = update('users');
+        users = await update('users');
         res.json({ message: 'Successfully added verifier' });
     } else if (action == 'remove') {
         if (currentStat.rows.length == 0) return res.json({ message: 'user is already removed' });
         const result = await query(`DELETE FROM verifiers WHERE user_id = $1 AND problem_id = $2`, [user.id, problemId]);
         if (result instanceof Error) return res.status(500).json({ message: 'database error' });
-        users = update('users');
+        users = await update('users');
         res.json({ message: 'Successfully removed verifier' });
     } else return res.sendStatus(400);
 });
