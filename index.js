@@ -21,7 +21,6 @@ let submissions;
     users = await update('users');
     proposedProblems = await update('proposedProblems');
     problems = await update('problems');
-    console.log(problems);
     submissions = await update('submissions');
     submissions.forEach(submission => {
         submission.approved = new Set();
@@ -182,7 +181,7 @@ function authenticateTokenHelper(token) {
         return { isAuthenticated: true, user };
     } catch (err) {
         console.log(err);
-        console.log(users.map(users => users.username));
+        console.log(users);
         return { isAuthenticated: false, message: err };
     }
 };
