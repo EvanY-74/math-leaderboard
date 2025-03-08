@@ -39,16 +39,16 @@
                     body: JSON.stringify({ username, password }),
                 });
 
-                const data = await response.json();
-
+                
                 submitButton.innerHTML = 'Log in';
                 message.style.display = 'block';
-                if (response.ok) {
+                if (response.redirected) {
                     message.innerHTML = 'redirecting';
                     message.classList.remove('red');
                     message.classList.add('green');
                     location.href = response.url;
                 } else {
+                    const data = await response.json();
                     message.innerHTML = data.message || data.errorCode || 'server error';
                     message.classList.remove('green');
                     message.classList.add('red');
