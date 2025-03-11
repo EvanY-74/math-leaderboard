@@ -68,6 +68,7 @@ async function update(table) {
                 verifyingProblems: (row.problem_ids[0] == null ? [] : row.problem_ids) || [],
             })) || [];
             rankUsers(users);
+            console.log(users);
             return users;
         case 'proposedProblems':   
             result = await query('SELECT proposed_problems.*, users.username FROM proposed_problems JOIN users ON proposed_problems.creator_id = users.id ORDER BY time_created');
