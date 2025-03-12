@@ -81,7 +81,6 @@ app.get('/leaderboard', (req, res) => {
 });
 
 app.get('/problems', (req, res) => {
-    console.log('number of problems', problems.length);
     res.render('problems', { problems });
 });
 
@@ -181,19 +180,19 @@ function authenticateTokenHelper(token) {
         return { isAuthenticated: true, user };
     } catch (err) {
         console.log(err);
-        console.log(users);
+        console.log(users?.length);
         return { isAuthenticated: false, message: err };
     }
 };
 
 app.get('/auth-status/check', (req, res) => {
-    const token = req?.headers?.cookie?.replace('accessToken=', '');
+    const token = req?.headers?.cookie?.replace('accessToken=', '') || req?.headers?.authorization?.split(' ')?.[1];
     const authStatus = authenticateTokenHelper(token);
     res.json({ isAuthenticated: authStatus.isAuthenticated });
 });
 
 function authenticateToken(req, res, next) {
-    const token = req?.headers?.cookie?.replace('accessToken=', '');
+    const token = req?.headers?.cookie?.replace('accessToken=', '') || req.headers['x-access-token'];
     const authStatus = authenticateTokenHelper(token);
     // console.log(authStatus?.user?.username || authStatus?.message);
     if (!authStatus.isAuthenticated) {

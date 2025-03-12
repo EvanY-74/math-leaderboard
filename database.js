@@ -68,7 +68,7 @@ async function update(table) {
                 verifyingProblems: (row.problem_ids[0] == null ? [] : row.problem_ids) || [],
             })) || [];
             rankUsers(users);
-            console.log(users);
+            console.log(users?.length);
             return users;
         case 'proposedProblems':   
             result = await query('SELECT proposed_problems.*, users.username FROM proposed_problems JOIN users ON proposed_problems.creator_id = users.id ORDER BY time_created');
@@ -128,11 +128,12 @@ async function update(table) {
 }
 
 function rankUsers(users, preSorted = true) {
-    if (!preSorted) users = users.sort((a, b) => b.points - a.points);
+    let sortedUsers = users.copy();
+    if (!preSorted) users = sortedUsers.sort((a, b) => b.points - a.points);
 
     let currentRank = 1;
     let currentPoints = -Infinity;
-    users.forEach((user, i) => {
+    sortedUsers.forEach((user, i) => {
         if (user.points == currentPoints) {
             user.rank = currentRank;
         } else {
