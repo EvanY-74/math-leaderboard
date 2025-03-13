@@ -187,6 +187,12 @@ function authenticateTokenHelper(token) {
     }
 };
 
+app.get('/check', async (req, res) => {
+    console.log(users);
+    users = await update('users');
+    console.log(users);
+})
+
 app.get('/auth-status/check', (req, res) => {
     const token = req?.headers?.cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
