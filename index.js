@@ -180,7 +180,6 @@ function authenticateTokenHelper(token) {
         return { isAuthenticated: true, user };
     } catch (err) {
         console.log(err);
-        console.log(users?.length);
         return { isAuthenticated: false, message: err };
     }
 };
