@@ -170,8 +170,10 @@ function authenticateTokenHelper(token) {
         return { isAuthenticated: false, message: 'no token' };
     }
     
+    console.log(users?.length)
     try {
         console.log(token);
+        console.log(users?.length)
         const jwtUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const user = users.find(user => user.username.toLowerCase() === jwtUser.username.toLowerCase());
         if (!user) {
