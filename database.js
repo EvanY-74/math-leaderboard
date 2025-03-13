@@ -68,7 +68,7 @@ async function update(table) {
                 verifyingProblems: (row.problem_ids[0] == null ? [] : row.problem_ids) || [],
             })) || [];
             console.log('before ranking', users?.length, result.rows?.length);
-            users = rankUsers(users);
+            // users = rankUsers(users);
             console.log('after ranking', users?.length);
             return users;
         case 'proposedProblems':   
