@@ -187,13 +187,11 @@ function authenticateTokenHelper(token) {
 };
 
 app.get('/check', async (req, res) => {
-    console.log(users);
-    let result = await update('users');
-    if (result instanceof Error) {
-        console.log(result);
-        return res.status(500).json({ message: 'database error' });
-    }
-    console.log(users);
+    console.log(users?.length);
+    result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
+    if (result instanceof Error) return socket.emit('error', 'Failed to update score');
+    users = await update('users');
+    console.log(users?.length);
 })
 
 app.get('/auth-status/check', (req, res) => {
@@ -336,7 +334,6 @@ io.on('connection', socket => {
                 const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty;
                 result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
                 if (result instanceof Error) return socket.emit('error', 'Failed to update score');
-                // socket.user.score += pointsEarned;
                 users = await update('users');
             }
         } else {
