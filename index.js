@@ -188,9 +188,9 @@ function authenticateTokenHelper(token) {
 
 app.get('/check', async (req, res) => {
     console.log(users?.length);
-    result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
-    if (result instanceof Error) return socket.emit('error', 'Failed to update score');
-    users = await update('users');
+    let result = await update('users');
+    if (result instanceof Error) console.log(result);
+    users = result;
     console.log(users?.length);
 })
 
