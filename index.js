@@ -189,7 +189,11 @@ function authenticateTokenHelper(token) {
 
 app.get('/check', async (req, res) => {
     console.log(users);
-    users = await update('users');
+    let result = await update('users');
+    if (result instanceof Error) {
+        console.log(result);
+        return res.status(500).json({ message: 'database error' });
+    }
     console.log(users);
 })
 
