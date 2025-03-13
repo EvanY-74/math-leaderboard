@@ -365,8 +365,8 @@ io.on('connection', socket => {
 });
 
 io.use((socket, next) => {
-    const cookies = socket.handshake.headers.cookie;
-    const token = req?.headers?.cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
+    const cookies = socket.handshake?.headers?.cookie;
+    const token = cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
 
     if (!authStatus.isAuthenticated) {
