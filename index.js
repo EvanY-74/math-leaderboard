@@ -172,7 +172,6 @@ function authenticateTokenHelper(token) {
     
     console.log('before auth', users?.length)
     try {
-        console.log(token);
         console.log('during auth', users?.length)
         const jwtUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const user = users.find(user => user.username.toLowerCase() === jwtUser.username.toLowerCase());
