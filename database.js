@@ -67,7 +67,9 @@ async function update(table) {
                 solvedProblems: (row.solved_problems[0] == null ? [] : row.solved_problems) || [],
                 verifyingProblems: (row.problem_ids[0] == null ? [] : row.problem_ids) || [],
             })) || [];
-            rankUsers(users);
+            console.log(users?.length);
+            users = rankUsers(users);
+            console.log(users?.length);
             return users;
         case 'proposedProblems':   
             result = await query('SELECT proposed_problems.*, users.username FROM proposed_problems JOIN users ON proposed_problems.creator_id = users.id ORDER BY time_created');
@@ -128,7 +130,7 @@ async function update(table) {
 
 function rankUsers(users, preSorted = true) {
     let sortedUsers = [...users];
-    if (!preSorted) users = sortedUsers.sort((a, b) => b.points - a.points);
+    if (!preSorted) sortedUsers.sort((a, b) => b.points - a.points);
 
     let currentRank = 1;
     let currentPoints = -Infinity;
@@ -141,6 +143,7 @@ function rankUsers(users, preSorted = true) {
             currentPoints = user.points;
         }
     });
+    return sortedUsers;
 }
 
 module.exports = { query, update };
