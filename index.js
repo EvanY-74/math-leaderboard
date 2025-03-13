@@ -171,6 +171,7 @@ function authenticateTokenHelper(token) {
     }
     
     try {
+        console.log(token);
         const jwtUser = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const user = users.find(user => user.username.toLowerCase() === jwtUser.username.toLowerCase());
         if (!user) {
@@ -263,7 +264,7 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
             filteredSubmissions.push({ ...submission, approved: Array.from(submission.approved), rejected: Array.from(submission.rejected), hasVoted });
         }
     });
-    res.render('verifier', { submissions: filteredSubmissions, verifierName: req.user.username });
+    res.render('verifier', { submissions: filteredSubmissions, problemName: problems.find(problem => problem.id == req.params?.id)?.name || '???', verifierName: req.user.username });
 });
 
 
