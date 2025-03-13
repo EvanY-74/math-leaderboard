@@ -186,13 +186,13 @@ function authenticateTokenHelper(token) {
 };
 
 app.get('/auth-status/check', (req, res) => {
-    const token = req?.headers?.cookie?.replace('accessToken=', '') || req?.headers?.authorization?.split(' ')?.[1];
+    const token = req?.headers?.cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
     res.json({ isAuthenticated: authStatus.isAuthenticated });
 });
 
 function authenticateToken(req, res, next) {
-    const token = req?.headers?.cookie?.replace('accessToken=', '') || req.headers['x-access-token'];
+    const token = req?.headers?.cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
     // console.log(authStatus?.user?.username || authStatus?.message);
     if (!authStatus.isAuthenticated) {
@@ -366,7 +366,7 @@ io.on('connection', socket => {
 
 io.use((socket, next) => {
     const cookies = socket.handshake.headers.cookie;
-    const token = cookies?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
+    const token = req?.headers?.cookie?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
 
     if (!authStatus.isAuthenticated) {
