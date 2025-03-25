@@ -26,7 +26,10 @@ let submissions;
         submission.approved = new Set();
         submission.rejected = new Set();
     });
-    console.log('Done fetching');
+    console.log('Done fetching everything');
+    server.listen(PORT, () => {
+        console.log(`listening on port ${PORT}`);
+    });
 })();
 
 function invalidInput(value) {
@@ -541,8 +544,4 @@ app.post('/propose-problem', authenticateToken, async (req, res) => {
 
 app.get('/propose-problem/success', (req, res) => {
     res.render('message', { h1: 'Proposed problem submitted successfully', p: 'A manager will approve or reject your problem soon. Please note that anything in your submission can be altered, although you will still receive credit for it.' })
-});
-
-server.listen(PORT, () => {
-    console.log(`listening on port ${PORT}`);
 });
