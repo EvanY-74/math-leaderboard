@@ -18,7 +18,7 @@ async function query(query, parameters) {
         return res;
     } catch (error) {
         console.error(error);
-        return error;
+        return [];
     }
 }
 
@@ -52,10 +52,8 @@ async function update(table) {
                     points DESC,
                     username ASC;
             `);
-            if (result instanceof Error) {
-                console.error(result);
-                return;
-            } 
+            if (result instanceof Error) throw result;
+
             let users = result.rows.map((row, i) => ({
                 id: row.id,
                 username: row.username,
@@ -71,10 +69,7 @@ async function update(table) {
             return users;
         case 'proposedProblems':   
             result = await query('SELECT proposed_problems.*, users.username FROM proposed_problems JOIN users ON proposed_problems.creator_id = users.id ORDER BY time_created');
-            if (result instanceof Error) {
-                console.error(result);
-                return;
-            } 
+            if (result instanceof Error) throw result;
             return result.rows.map((row, i) => ({
                 id: row.id,
                 name: row.name,
@@ -91,10 +86,7 @@ async function update(table) {
             })) || [];
         case 'problems':
             result = await query(`SELECT problems.*, users.username FROM problems JOIN users ON problems.creator_id = users.id ORDER BY difficulty DESC`);
-            if (result instanceof Error) {
-                console.error(result);
-                return;
-            } 
+            if (result instanceof Error) throw result;
             return result.rows.map(row => ({
                 id: row.id,
                 name: row.name,
@@ -109,10 +101,7 @@ async function update(table) {
             })) || [];
         case 'submissions':
             result = await query(`SELECT submissions.id, time_submitted, answer, proof_link, users.username, problem_id FROM submissions JOIN users ON submissions.user_id = users.id WHERE status = 'pending' ORDER BY time_submitted`);
-            if (result instanceof Error) {
-                console.error(result);
-                return;
-            } 
+            if (result instanceof Error) throw result;
             return result.rows.map(row => ({
                 id: row.id,
                 username: row.username,
