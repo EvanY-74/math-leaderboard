@@ -370,6 +370,7 @@ io.on('connection', socket => {
 io.use((socket, next) => {
     const cookies = socket.handshake?.headers?.cookie;
     const token = cookies?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
+    console.log(token);
     const authStatus = authenticateTokenHelper(token);
 
     if (!authStatus.isAuthenticated) {
