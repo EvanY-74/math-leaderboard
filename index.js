@@ -9,7 +9,13 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server/*, { cors: { origin: '*' } }*/);
+const io = new Server(server/*, { cors: { origin: '*' } }*/)(httpServer, {
+  cors: {
+    origin: 'https://math-league.vercel.app',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});;
 
 const { query, update } = require('./database');
 let users;
@@ -374,6 +380,7 @@ io.engine.on("connection_error", (err) => {
   console.log(err.message);  // the error message, for example "Session ID unknown"
   console.log(err.context);  // some additional error context
 });
+
 
 io.use((socket, next) => {
     const cookies = socket.handshake?.headers?.cookie;
