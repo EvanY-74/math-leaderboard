@@ -276,6 +276,7 @@ let chatHistory = {};
 
 io.on('connection', socket => {
     socket.on('join_room', room => {
+        console.log('connection')
         if (!isVerifierOfProblem(socket.user, room)) return socket.emit('error', 'You do not have permission to join this room');
         socket.join(room);
         chatHistory[room] = chatHistory[room] || [];
@@ -372,8 +373,8 @@ io.use((socket, next) => {
     const token = cookies?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
     const authStatus = authenticateTokenHelper(token);
 
+    console.log(authStatus);
     if (!authStatus.isAuthenticated) {
-        console.log(authStatus);
         return next(new Error('Authentication failed: Invalid or missing token'));
     }
 
