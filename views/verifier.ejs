@@ -32,13 +32,13 @@
                 <% } %>
             </ul>
         </div>
-        <section id="chat">
+        <!-- <section id="chat">
             <article id="messages"></article>
             <div>
                 <input type="text" id="messageInput" style="width: 100%" placeholder="message">
                 <button onclick="sendMessage()">Send</button>
             </div>
-        </section>
+        </section> -->
     </main>
     <script>
         const submissionsElement = document.getElementById('submissions');
@@ -65,7 +65,11 @@
                 if (response.redirected) {
                     location.href = response.url;
                 } else {
-                    console.log(response);
+                    const data = await response.json();
+                    if (data.error) {
+                        alert(data.message);
+                        console.log(data.message);
+                    }
                 }
             } catch (error) {
                 console.error(error);
@@ -73,128 +77,128 @@
             }
         }));
 
-        socket.emit('join_room', location.pathname.split('/').at(-1));
+        // socket.emit('join_room', location.pathname.split('/').at(-1));
 
-        socket.on('join_room_response', chatHistory => {
-            if (!chatHistory) return;
-            chatHistory.forEach(message => renderMessage(message));
-        });
-
-        // socket.on('message', message => {
-        //     renderMessage(message);
+        // socket.on('join_room_response', chatHistory => {
+        //     if (!chatHistory) return;
+        //     chatHistory.forEach(message => renderMessage(message));
         // });
-        socket.on('message', renderMessage);
 
-        function renderMessage(packet) {
-            let { username, message, timestamp } = packet;
+        // // socket.on('message', message => {
+        // //     renderMessage(message);
+        // // });
+        // socket.on('message', renderMessage);
 
-            const div = document.createElement('div');
-            const label = document.createElement('label');
-            label.innerHTML = username;
-            const p = document.createElement('p');
-            p.innerHTML = message;
-            if (username == 'you') {
-                label.classList.add('you');
-                p.classList.add('you');
-            }
-            const time = document.createElement('time');
-            time.innerHTML = (new Date(timestamp)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
-            div.appendChild(label);
-            div.appendChild(p);
-            div.appendChild(time);
-            messages.appendChild(div);
-        }
+        // function renderMessage(packet) {
+        //     let { username, message, timestamp } = packet;
 
-        socket.on('vote', submissions => {
-            submissionsElement.textContent = '';
-            if (submissions.length == 0) {
-                const p = document.createElement('p');
-                p.innerHTML = 'No new submissions';
-                submissionElement.appendChild(p);
-                return;
-            }
+        //     const div = document.createElement('div');
+        //     const label = document.createElement('label');
+        //     label.innerHTML = username;
+        //     const p = document.createElement('p');
+        //     p.innerHTML = message;
+        //     if (username == 'you') {
+        //         label.classList.add('you');
+        //         p.classList.add('you');
+        //     }
+        //     const time = document.createElement('time');
+        //     time.innerHTML = (new Date(timestamp)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+        //     div.appendChild(label);
+        //     div.appendChild(p);
+        //     div.appendChild(time);
+        //     messages.appendChild(div);
+        // }
 
-            submissions.forEach(submission => {
-                const li = document.createElement('li');
-                const p = document.createElement('p');
-                p.innerHTML = `${submission.answer} - <strong>${submission.username}</strong>, ${(new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}`;
-                li.appendChild(p);
-                const label = document.createElement('label');
-                label.innerHTML = `<a href="${submission.proofLink}">${submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink}</a></label>`;
-                li.appendChild(label);
-                const greenButton = document.createElement('button');
-                const redButton = document.createElement('button');
-                greenButton.classList.add('green');
-                redButton.classList.add('red');
-                const hasVoted = submission.approved.some(username => username.toLowerCase() == verifierName.toLowerCase()) || submission.rejected.some(username => username.toLowerCase() == verifierName.toLowerCase());
-                greenButton.innerHTML = 'approve' + (submission.approved.length == 0 ? '' : ` (${submission.approved.length})`);
-                redButton.innerHTML = 'reject' + (submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})`);
-                greenButton.disabled = hasVoted;
-                redButton.disabled = hasVoted;
-                li.appendChild(greenButton);
-                li.appendChild(redButton);
+        // socket.on('vote', submissions => {
+        //     submissionsElement.textContent = '';
+        //     if (submissions.length == 0) {
+        //         const p = document.createElement('p');
+        //         p.innerHTML = 'No new submissions';
+        //         submissionElement.appendChild(p);
+        //         return;
+        //     }
+
+        //     submissions.forEach(submission => {
+        //         const li = document.createElement('li');
+        //         const p = document.createElement('p');
+        //         p.innerHTML = `${submission.answer} - <strong>${submission.username}</strong>, ${(new Date(submission.timeSubmitted)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' })}`;
+        //         li.appendChild(p);
+        //         const label = document.createElement('label');
+        //         label.innerHTML = `<a href="${submission.proofLink}">${submission.proofLink.length > maxLength ? submission.proofLink.slice(0, maxLength - 3) + '...' : submission.proofLink}</a></label>`;
+        //         li.appendChild(label);
+        //         const greenButton = document.createElement('button');
+        //         const redButton = document.createElement('button');
+        //         greenButton.classList.add('green');
+        //         redButton.classList.add('red');
+        //         const hasVoted = submission.approved.some(username => username.toLowerCase() == verifierName.toLowerCase()) || submission.rejected.some(username => username.toLowerCase() == verifierName.toLowerCase());
+        //         greenButton.innerHTML = 'approve' + (submission.approved.length == 0 ? '' : ` (${submission.approved.length})`);
+        //         redButton.innerHTML = 'reject' + (submission.rejected.length == 0 ? '' : ` (${submission.rejected.length})`);
+        //         greenButton.disabled = hasVoted;
+        //         redButton.disabled = hasVoted;
+        //         li.appendChild(greenButton);
+        //         li.appendChild(redButton);
                 
-                const span = document.createElement('span');
-                span.style.display = 'none';
-                span.innerHTML = submission.id;
-                li.appendChild(span);
+        //         const span = document.createElement('span');
+        //         span.style.display = 'none';
+        //         span.innerHTML = submission.id;
+        //         li.appendChild(span);
 
-                submissionsElement.appendChild(li);
-            });
+        //         submissionsElement.appendChild(li);
+        //     });
             
-            // const { id, approving } = packet;
-            // const elements = document.querySelectorAll('#submissions > div');
-            // if (!elements) return;
-            // // add 1 to approve or reject
-            // for (const element of elements) {
-            //     if (element.querySelector('span').innerHTML != id) continue;
-            //     const button = element.querySelector(approving ? '.green' : '.red');
-            //     console.log(button);
-            //     const splitStr = button.innerHTML.split(' ');
-            //     button.innerHTML = splitStr[0] + (splitStr.length == 1 ? ' (1)' : ` (${parseInt(splitStr[1].slice(1, -1)) + 1})`);
-            //     break;
-            // }
-        });
+        //     // const { id, approving } = packet;
+        //     // const elements = document.querySelectorAll('#submissions > div');
+        //     // if (!elements) return;
+        //     // // add 1 to approve or reject
+        //     // for (const element of elements) {
+        //     //     if (element.querySelector('span').innerHTML != id) continue;
+        //     //     const button = element.querySelector(approving ? '.green' : '.red');
+        //     //     console.log(button);
+        //     //     const splitStr = button.innerHTML.split(' ');
+        //     //     button.innerHTML = splitStr[0] + (splitStr.length == 1 ? ' (1)' : ` (${parseInt(splitStr[1].slice(1, -1)) + 1})`);
+        //     //     break;
+        //     // }
+        // });
 
-        function sendMessage() {
-            socket.emit('message', { room, message: messageInput.value });
-            renderMessage({ username: 'you', message: messageInput.value, timestamp: new Date() });
-            messageInput.value = '';
-        }
+        // function sendMessage() {
+        //     socket.emit('message', { room, message: messageInput.value });
+        //     renderMessage({ username: 'you', message: messageInput.value, timestamp: new Date() });
+        //     messageInput.value = '';
+        // }
 
-        messageInput.addEventListener('keyup', e => {
-            if (e.key == 'Enter') sendMessage();
-        });
+        // messageInput.addEventListener('keyup', e => {
+        //     if (e.key == 'Enter') sendMessage();
+        // });
 
-        socket.on('error', (message) => {
-            console.error(message);
-        });
+        // socket.on('error', (message) => {
+        //     console.error(message);
+        // });
         
-        socket.on("connect_error", (err) => {
-            // the reason of the error, for example "xhr poll error"
-            console.log(err.message);
+        // socket.on("connect_error", (err) => {
+        //     // the reason of the error, for example "xhr poll error"
+        //     console.log(err.message);
 
-            // some additional description, for example the status code of the initial HTTP response
-            console.log(err.description);
+        //     // some additional description, for example the status code of the initial HTTP response
+        //     console.log(err.description);
 
-            // some additional context, for example the XMLHttpRequest object
-            console.log(err.context);
-        });
-        socket.on("disconnect", (reason, details) => {
-            console.error('Server disconnected');
+        //     // some additional context, for example the XMLHttpRequest object
+        //     console.log(err.context);
+        // });
+        // socket.on("disconnect", (reason, details) => {
+        //     console.error('Server disconnected');
 
-            // the reason of the disconnection, for example "transport error"
-            console.log(reason);
+        //     // the reason of the disconnection, for example "transport error"
+        //     console.log(reason);
 
-            // the low-level reason of the disconnection, for example "xhr post error"
-            console.log(details.message);
+        //     // the low-level reason of the disconnection, for example "xhr post error"
+        //     console.log(details.message);
 
-            // some additional description, for example the status code of the HTTP response
-            console.log(details.description);
+        //     // some additional description, for example the status code of the HTTP response
+        //     console.log(details.description);
 
-            // some additional context, for example the XMLHttpRequest object
-            console.log(details.context);
-        });
+        //     // some additional context, for example the XMLHttpRequest object
+        //     console.log(details.context);
+        // });
     </script>
 </body>
 </html>
