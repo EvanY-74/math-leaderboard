@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { Server } = require('socket.io');
 require('dotenv').config(); // stored in process.env
 const path = require('path');
 const http = require('http');
@@ -9,13 +8,6 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server/*, { cors: { origin: '*' } }*/, {
-  cors: {
-    origin: 'https://math-league.vercel.app',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
 
 const { query, update } = require('./database');
 let users;
@@ -280,123 +272,55 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
 
 let chatHistory = {};
 
-io.on('connection', socket => {
-    socket.on('join_room', room => {
-        console.log('connection')
-        if (!isVerifierOfProblem(socket.user, room)) return socket.emit('error', 'You do not have permission to join this room');
-        socket.join(room);
-        chatHistory[room] = chatHistory[room] || [];
-        socket.emit('join_room_response', chatHistory[room].map(element => ({
-            username: element.username.toLowerCase() == socket.user.username.toLowerCase() ? 'you' : element.username,
-            message: element.message,
-            timestamp: element.timestamp
-        })));
-        // const message = {
-        //     username: 'server',
-        //     message: socket.user.username + ' has joined',
-        //     timestamp: new Date()
-        // }
-        // chatHistory[room].push(message); 
-        // socket.broadcast.to(room).emit('message', message);
-    });
-    socket.on('message', packet => {
-        if (!packet) return socket.emit('error', 'no body');
-        const { room, message } = packet;
-        if (!room || !message || typeof message !== 'string') return socket.emit('error', 'invalid body');
-        if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to message this room');
-        const chatLog = {
-            username: socket.user.username,
-            message,
-            timestamp: new Date()
-        }
-        socket.broadcast.to(room).emit('message', chatLog);
-        chatHistory[room].push(chatLog); 
-    });
-
-    socket.on('vote', async packet => {
-        if (!packet) return socket.emit('error', 'no body');
-        const { room, submissionId, approving } = packet;
-        if (!room || submissionId == undefined || approving == undefined) return socket.emit('error', 'invalid body');
-        if (!socket.rooms.has(room)) return socket.emit('error', 'You do not have permission to use this room');
+app.post('/verifier/:id', authenticateToken, async (req, res) => {
+        const { submissionId, approving } = req.body;
+        if (!room || submissionId == undefined || approving == undefined) return res.sendStatus(422);
+        if (!socket.rooms.has(room)) return res.sendStatus(403);
         const submission = submissions.find(submission => submission.id == submissionId);
-        if (!submission) return socket.emit('error', 'submission was not found'); // should basically always be false as socket.rooms should only have valid rooms
-        if (submission != 'pending') socket.emit('error', 'submissions has already been processed');
-        const hasVoted = submission.approved.has(socket.user.id) || submission.rejected.has(socket.user.id);
-        if (hasVoted) return socket.emit('error', 'You have already voted');
+        if (!submission) return res.send(403).json({ error: true, message: 'Room does not exist' });
+        if (submission != 'pending') res.status(208).json({ error: true, message: 'submissions has already been processed' });
+        const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
+        if (hasVoted) return res.status(208).json({ error: true, message: 'You have already voted' });
 
         const filteredSubmissions = submissions.filter(submission => submission.problemId == room);
         const totalVerifiers = users.reduce((count, user) => (isVerifierOfProblem(user, submission.problemId) ? count + 1 : count), 0);
         if (approving) {
-            submission.approved.add(socket.user.id);
+            submission.approved.add(req.user.id);
             if (submission.approved.size / totalVerifiers > 0.5 || (submission.rejected.size == 0 && submission.approved.size >= Math.min(totalVerifiers * 0.3, 4))) {
                 let result = await query(`UPDATE submissions SET status = 'approved' WHERE id = $1`, [submission.id]);
-                if (result instanceof Error) return socket.emit('error', 'Failed to update submission');
+                if (result instanceof Error) res.status(500).json({ error: true, message: 'Internal server error' });
                 submission.status = 'approved';
 
                 const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty;
-                result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [socket.user.id, submission.id, pointsEarned]);
-                if (result instanceof Error) return socket.emit('error', 'Failed to update score');
+                result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [req.user.id, submission.id, pointsEarned]);
+                if (result instanceof Error) res.status(500).json({ error: true, message: 'Failed to update vote' });
                 users = await update('users');
             }
         } else {
-            submission.rejected.add(socket.user.id);
+            submission.rejected.add(req.user.id);
             if (submission.rejected.size / totalVerifiers >= 0.5 || (totalVerifiers > 4 && submission.rejected.size > submission.approved.size && submission.rejected.size >= Math.min(totalVerifiers * 0.33, 3))) {
                 const result = await query(`UPDATE submissions SET status = 'rejected' WHERE id = $1`, [submission.id]);
-                if (result instanceof Error) return socket.emit('error', 'Failed to update submission');
+                if (result instanceof Error) res.status(500).json({ error: true, message: 'Failed to update vote' });
                 submission.status = 'rejected';
             }
         }
 
-        const userMap = users.reduce((map, user) => {
-            map[user.id] = user.username;
-            return map;
-        }, {});
+        // const userMap = users.reduce((map, user) => {
+        //     map[user.id] = user.username;
+        //     return map;
+        // }, {});
 
-        io.in(room).emit('vote', [
-            ...filteredSubmissions.map(submission => ({
-                answer: submission.answer,
-                username: submission.username,
-                timeSubmitted: submission.timeSubmitted,
-                proofLink: submission.proofLink,
-                approved: Array.from(submission.approved).map(id => userMap[id]),
-                rejected: Array.from(submission.rejected).map(id => userMap[id])
-            }))
-        ]);
-        // io.in(room).emit('vote', { id, approving });
-
-        // const chatLog = {
-        //     username: 'server',
-        //     message: `${socket.user.message} has ${approving ? 'approved' : 'rejected'} ${username}'s submission`,
-        //     timestamp: new Date()
-        // }
-        // socket.broadcast.to(room).emit('message', chatLog);
-        // chatHistory[room].push(chatLog); 
-    });
+        // io.in(room).emit('vote', [
+        //     ...filteredSubmissions.map(submission => ({
+        //         answer: submission.answer,
+        //         username: submission.username,
+        //         timeSubmitted: submission.timeSubmitted,
+        //         proofLink: submission.proofLink,
+        //         approved: Array.from(submission.approved).map(id => userMap[id]),
+        //         rejected: Array.from(submission.rejected).map(id => userMap[id])
+        //     }))
+        // ]);
 });
-
-io.engine.on("connection_error", (err) => {
-  console.log(err.req);      // the request object
-  console.log(err.code);     // the error code, for example 1
-  console.log(err.message);  // the error message, for example "Session ID unknown"
-  console.log(err.context);  // some additional error context
-});
-
-
-io.use((socket, next) => {
-    const cookies = socket.handshake?.headers?.cookie;
-    const token = cookies?.split('; ').find(cookie => cookie.startsWith('accessToken='))?.split('=')[1];
-    const authStatus = authenticateTokenHelper(token);
-
-    console.log(authStatus);
-    if (!authStatus.isAuthenticated) {
-        return next(new Error('Authentication failed: Invalid or missing token'));
-    }
-
-    socket.user = authStatus.user;
-
-    next();
-});
-
 
 app.get('/manager', authenticateToken, isManager, (req, res) => {
     const proposedProblemsPending = [];

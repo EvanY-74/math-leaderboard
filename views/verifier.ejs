@@ -40,13 +40,7 @@
             </div>
         </section>
     </main>
-    <!-- <script src="/socket.io/socket.io.js"></script> -->
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <script>
-        // const socket = io();
-        const socket = io('https://math-league.vercel.app', {
-            withCredentials: true
-        });
         const submissionsElement = document.getElementById('submissions');
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.querySelector('button');
@@ -61,7 +55,22 @@
             const approving = [...e.target.classList].includes('green');
             // console.log(id, [...e.target.classList].includes('green'))
             
-            socket.emit('vote', { room, submissionId, approving });
+            try {
+                const response = await fetch(location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ submissionId, approving })
+                });
+
+                if (response.redirected) {
+                    location.href = response.url;
+                } else {
+                    console.log(response);
+                }
+            } catch (error) {
+                console.error(error);
+                // submitButton.innerHTML = 'client error';
+            }
         }));
 
         socket.emit('join_room', location.pathname.split('/').at(-1));
