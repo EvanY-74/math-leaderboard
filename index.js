@@ -274,15 +274,15 @@ let chatHistory = {};
 
 app.post('/verifier/:id', authenticateToken, async (req, res) => {
         const { submissionId, approving } = req.body;
-        if (!room || submissionId == undefined || approving == undefined) return res.sendStatus(422);
-        if (!socket.rooms.has(room)) return res.sendStatus(403);
+        if (req?.params?.id || submissionId == undefined || approving == undefined) return res.sendStatus(422);
+        if (!isVerifierOfProblem(req.user, req.params.id)) return res.redirect('/invalid-permissions');
         const submission = submissions.find(submission => submission.id == submissionId);
-        if (!submission) return res.send(403).json({ error: true, message: 'Room does not exist' });
+        if (!submission) return res.send(403).json({ error: true, message: 'Problem does not exist' });
         if (submission != 'pending') res.status(208).json({ error: true, message: 'submissions has already been processed' });
         const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
         if (hasVoted) return res.status(208).json({ error: true, message: 'You have already voted' });
 
-        const filteredSubmissions = submissions.filter(submission => submission.problemId == room);
+        // const filteredSubmissions = submissions.filter(submission => submission.problemId == req.params.id);
         const totalVerifiers = users.reduce((count, user) => (isVerifierOfProblem(user, submission.problemId) ? count + 1 : count), 0);
         if (approving) {
             submission.approved.add(req.user.id);
