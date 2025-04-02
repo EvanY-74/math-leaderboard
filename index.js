@@ -274,7 +274,7 @@ let chatHistory = {};
 
 app.post('/verifier/:id', authenticateToken, async (req, res) => {
         const { submissionId, approving } = req.body;
-        if (req?.params?.id || submissionId == undefined || approving == undefined) return res.sendStatus(422);
+        if (req?.params?.id == undefined || submissionId == undefined || approving == undefined) return res.sendStatus(422);
         if (!isVerifierOfProblem(req.user, req.params.id)) return res.redirect('/invalid-permissions');
         const submission = submissions.find(submission => submission.id == submissionId);
         if (!submission) return res.send(403).json({ error: true, message: 'Problem does not exist' });
