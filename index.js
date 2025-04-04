@@ -285,22 +285,23 @@ app.post('/verifier/:id', authenticateToken, async (req, res) => {
             submission.approved.add(req.user.id);
             if (submission.approved.size / totalVerifiers > 0.5 || (submission.rejected.size == 0 && submission.approved.size >= Math.min(totalVerifiers * 0.3, 4))) {
                 let result = await query(`UPDATE submissions SET status = 'approved' WHERE id = $1`, [submission.id]);
-                if (result instanceof Error) res.status(500).json({ error: true, message: 'Internal server error' });
+                if (result instanceof Error) return res.status(500).json({ error: true, message: 'Internal server error' });
                 submission.status = 'approved';
 
                 const pointsEarned = problems.find(problem => problem.id == submission.problemId).difficulty;
                 result = await query(`INSERT INTO solves (user_id, submission_id, points_granted) VALUES ($1, $2, $3)`, [req.user.id, submission.id, pointsEarned]);
-                if (result instanceof Error) res.status(500).json({ error: true, message: 'Failed to update vote' });
+                if (result instanceof Error) return res.status(500).json({ error: true, message: 'Failed to update vote' });
                 users = await update('users');
             }
         } else {
             submission.rejected.add(req.user.id);
             if (submission.rejected.size / totalVerifiers >= 0.5 || (totalVerifiers > 4 && submission.rejected.size > submission.approved.size && submission.rejected.size >= Math.min(totalVerifiers * 0.33, 3))) {
                 const result = await query(`UPDATE submissions SET status = 'rejected' WHERE id = $1`, [submission.id]);
-                if (result instanceof Error) res.status(500).json({ error: true, message: 'Failed to update vote' });
+                if (result instanceof Error) return res.status(500).json({ error: true, message: 'Failed to update vote' });
                 submission.status = 'rejected';
             }
         }
+        res.status(202).json({ error: false, message: 'Request received' });
 
         // const userMap = users.reduce((map, user) => {
         //     map[user.id] = user.username;
