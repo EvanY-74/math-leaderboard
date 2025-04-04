@@ -259,7 +259,8 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
 
     const filteredSubmissions = [];
     submissions.forEach(submission => {
-        if (submission.problemId == req.params?.id && submission.status == 'pending') { // added submission.status == 'pending
+        if (submission.problemId == req.params?.id) { // added submission.status == 'pending
+            console.log(submission.id, submission.status == 'pending')
             const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
             filteredSubmissions.push({ ...submission, approved: Array.from(submission.approved), rejected: Array.from(submission.rejected), hasVoted });
         }
