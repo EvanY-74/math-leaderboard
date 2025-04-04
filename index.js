@@ -260,7 +260,6 @@ app.get('/verifier/:id', authenticateToken, (req, res) => {
     const filteredSubmissions = [];
     submissions.forEach(submission => {
         if (submission.problemId == req.params?.id) { // added submission.status == 'pending
-            console.log(submission.id, submission.status == 'pending')
             const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
             filteredSubmissions.push({ ...submission, approved: Array.from(submission.approved), rejected: Array.from(submission.rejected), hasVoted });
         }
@@ -277,7 +276,6 @@ app.post('/verifier/:id', authenticateToken, async (req, res) => {
         if (!isVerifierOfProblem(req.user, req.params.id)) return res.redirect('/invalid-permissions');
         const submission = submissions.find(submission => submission.id == submissionId);
         if (!submission) return res.send(403).json({ error: true, message: 'Problem does not exist' });
-        if (submission != 'pending') res.status(208).json({ error: true, message: 'submissions has already been processed' });
         const hasVoted = submission.approved.has(req.user.id) || submission.rejected.has(req.user.id);
         if (hasVoted) return res.status(208).json({ error: true, message: 'You have already voted' });
 
